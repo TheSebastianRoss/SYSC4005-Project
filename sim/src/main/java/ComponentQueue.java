@@ -1,10 +1,11 @@
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.List;
+import java.util.Map;
 
 public class ComponentQueue {
     private int queueLength;
-    // private List<(int, double)> queueLengthTime;
+    private Map<Double, Integer> queueLengthTimes;
     private int maxQueueLength;
     private double sumResponseTime;
     private int numDepartures;
