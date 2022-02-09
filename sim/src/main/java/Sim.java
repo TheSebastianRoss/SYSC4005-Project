@@ -214,6 +214,7 @@ public class Sim {
         case "insp1":
             Inspector insp1 = this.inspectors.get(id);
             if (this.isComponentQueueAvailable("c1")) {
+                // There is room, so get component from Inspector
                 insp1.setIsBlocked(false);
                 insp1.get(this.clock);
                 
@@ -222,15 +223,19 @@ public class Sim {
                 this.processArrival(component, shortestAvailableQueue);
                 this.notifyInspector("insp2");
                 this.scheduleArrival("insp1");
+                
             } else {
+                // There is no room, so just update the Inspector's statistics
                 insp1.setIsBlocked(true);
-                System.out.println("Inspect 1 blocked");
+                insp1.get(this.clock);
+                System.out.println("Inspector 1 blocked");
             }
             break;
                 
         case "insp2":
             Inspector insp2 = this.inspectors.get(id);
             if (component.contains("c2") && this.isComponentQueueAvailable("c2")) {
+                // There is room, so get component from Inspector
                 insp2.setIsBlocked(false);
                 insp2.get(this.clock);
                 
@@ -240,6 +245,7 @@ public class Sim {
                 this.scheduleArrival("insp2");
 
             } else if (component.contains("c3") && this.isComponentQueueAvailable("c3")) {
+                // There is room, so get component from Inspector
                 insp2.setIsBlocked(false);
                 insp2.get(this.clock);
                 
@@ -249,8 +255,10 @@ public class Sim {
                 this.scheduleArrival("insp2");
                 
             } else {
+                // There is no room, so just update the Inspector's statistics
                 insp2.setIsBlocked(true);
-                System.out.println("Inspect 2 blocked");
+                insp2.get(this.clock);
+                System.out.println("Inspector 2 blocked");
             }
             break;
             
@@ -307,6 +315,8 @@ public class Sim {
         // Average buffer occupancy of each buffer
         
         // Probability that each inspector remains blocked
+        this.inspectors.get("insp1").qReportGeneration(this.clock);
+        this.inspectors.get("insp2").qReportGeneration(this.clock);
     }
 
     public static void main(String[] args) {
