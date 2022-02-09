@@ -244,7 +244,7 @@ public class Sim {
                 insp2.get(this.clock);
                 
                 // Place component from Inspector 2 into correct ComponentQueue
-                this.processArrival(component, "c2");
+                this.processArrival(component, "c3");
                 this.notifyInspector("insp1");
                 this.scheduleArrival("insp2");
                 
@@ -260,7 +260,13 @@ public class Sim {
             System.out.printf("%d products have been produced\n", this.numSystemDepartures);
             
             // Empty workstation to prepare for new product
-            this.workstations.get(id).get(this.clock);
+            Workstation ws = this.workstations.get(id);
+            ws.get(this.clock);
+            
+            // Schedule a new departure if components are available
+            Event depart = ws.service(this.clock);
+            if (depart != null)
+                this.futureEventList.add(depart);
             
             // Notify potentially blocked inspectors
             switch (id) {
@@ -276,7 +282,29 @@ public class Sim {
     }
 
     public void reportSGeneration() {
-        throw new NotImplementedException();
+        /*
+         * Prints the statistical report of the simulation.
+         * 
+         * The report includes the following:
+         * - Facility throughput
+         * - Probability that each workstation is busy
+         * - Average buffer occupancy of each buffer
+         * - Probability that each inspector remains blocked
+         */
+        double throughput = this.TOTAL_PRODUCTS / this.clock;
+        
+        // Throughput
+        System.out.println("\n\n*** SIMULATION REPORT ***");
+        System.out.printf("Throughput (products per clock cycle) = %.2f\n\n", throughput);
+        
+        // Probability that each workstation is busy
+        this.workstations.get("w1").qReportGeneration(this.clock);
+        this.workstations.get("w2").qReportGeneration(this.clock);
+        this.workstations.get("w3").qReportGeneration(this.clock);
+        
+        // Average buffer occupancy of each buffer
+        
+        // Probability that each inspector remains blocked
     }
 
     public static void main(String[] args) {
@@ -315,5 +343,8 @@ public class Sim {
 
             }
         }
+        
+        // Print report
+        sim.reportSGeneration();
     }
 }

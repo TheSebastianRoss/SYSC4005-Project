@@ -16,7 +16,7 @@ public class Workstation {
     private String id;
     
     public Workstation(String id, List<ComponentQueue> componentQueues) {
-        this.MEAN_SERVICE_TIME = 3;
+        this.MEAN_SERVICE_TIME = 4;
         this.SIGMA = 0.4;
         this.numInService = 0;
         this.inService = new ArrayList<>();
@@ -63,6 +63,10 @@ public class Workstation {
     }
 
     public Event service(double clock) {
+        /*
+         * Begins producing a product if all components are available.
+         * If production begins, then one of each component is consumed.
+         */
         Event depart;
         
         // Update clock
@@ -86,9 +90,16 @@ public class Workstation {
     }
     
     public void get(double clock) {
+        /*
+         * Removes the produced product from this Workstation.
+         */
         this.clock = clock; 
         this.numInService--;
         this.inService.remove(0);
+        
+        // Update statistics
+        this.totalBusy += (this.clock - this.lastEventTime);
+        this.lastEventTime = this.clock;
     }
 
     public Event scheduleDeparture(String product) {
@@ -109,6 +120,8 @@ public class Workstation {
     }
 
     public void qReportGeneration(double clock) {
-        throw new NotImplementedException();
+        double utilization = this.totalBusy / this.clock;
+        System.out.printf("*** WORKSTATION %s REPORT ***\n", this.id);
+        System.out.printf("Probability of being busy = %.2f\n\n", utilization);
     }
 }
