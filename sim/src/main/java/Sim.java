@@ -1,10 +1,16 @@
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Random;
 
+
+/**
+ * Simulates the SYSC 4005 project and then prints a statistical report.
+ * The simulation runs until TOTAL_PRODUCTS have been produced.
+ */
 public class Sim {
     private int TOTAL_PRODUCTS;
     private double clock;
@@ -18,6 +24,10 @@ public class Sim {
     private Map<String, Workstation> queueToWorkstation;
     private Queue<Event> futureEventList;
     
+    
+    /**
+     * Constructor
+     */
     public Sim() {
         this.TOTAL_PRODUCTS = 10;
         this.clock = 0;
@@ -26,7 +36,10 @@ public class Sim {
         this.c2Id = 0;
         this.c3Id = 0;
         this.inspectors = new HashMap<>();
-        this.queues = new HashMap<>();
+        
+        // Use LinkedHashMap to display report in proper order
+        this.queues = new LinkedHashMap<>();
+        
         this.workstations = new HashMap<>();
         this.queueToWorkstation = new HashMap<>();
         this.futureEventList = new PriorityQueue<Event>();
@@ -54,7 +67,7 @@ public class Sim {
         this.workstations.put("w2", w2);
         this.workstations.put("w3", w3);
         
-        // Initialize ComponentQueue to Workstation map
+        // Initialize ComponentQueue to Workstation map (used to direct components)
         this.queueToWorkstation.put("c11", w1);
         this.queueToWorkstation.put("c12", w2);
         this.queueToWorkstation.put("c13", w3);
@@ -62,14 +75,20 @@ public class Sim {
         this.queueToWorkstation.put("c3", w3);
     }
     
+    
+    /**
+     * Returns the ID for the next component that an Inspector will inspect
+     * and then increments the corresponding component counter.
+     * 
+     * Inspector 1 only inspects C1 components.
+     * Inspector 2 may inspect either C2 or C3 components
+     * 
+     * @param inspectorId the Inspector inspecting
+     * @return            the ID of the new component
+     */
     private String getComponent(String inspectorId) {
-        /*
-         * Returns the ID for the next component that an inspector will inspect
-         * and then increments the corresponding component counter.
-         * 
-         * Inspector 1 only inspects C1 components.
-         * Inspector 2 may inspect either C2 or C3 components
-         */
+        
+        // Define the component ID format
         String component = "c%d-%d";
         
         if (inspectorId.equals("insp1")) {
@@ -93,16 +112,19 @@ public class Sim {
         return component;
     }
     
+    
+    /**
+     * Returns the shortest available C1 queue with c11 being the highest
+     * priority and c13 being the lowest priority in the case of a tie.
+     * 
+     * Returns a blank String '' if none of the C1 queues have space.
+     * 
+     * @return the shortest available ComponentQueue, or '' if none available
+     */
     private String getShortestAvailableC1Queue() {
-        /*
-         * Returns the shortest available C1 queue with c11 being the highest
-         * priority and c13 being the lowest priority in the case of a tie.
-         * 
-         * Returns a blank String '' if none of the C1 queues have space.
-         */
         String[] c1Queues = new String[] {"c11", "c12", "c13"};
         String shortestAvailableQueue = "";
-        int shortestQueueLength = 2; // Because max length is 2
+        int shortestQueueLength = ComponentQueue.MAX_QUEUE_LENGTH;
         
         for (String queueId : c1Queues) {
             if (this.queues.get(queueId).getQueueLength() < shortestQueueLength) {
@@ -113,11 +135,18 @@ public class Sim {
         return shortestAvailableQueue;
     }
     
+    
+    /**
+     * Returns whether a ComponentQueue has space for a new component of type
+     * componentType.
+     * 
+     * componentType must be one of the following: ["c1", "c2", "c3"]
+     * 
+     * @param componentType the type of component
+     * @return              the ID of the ComponentQueue that has space
+     */
     private boolean isComponentQueueAvailable(String componentType) {
-        /*
-         * Returns whether or not a ComponentQueue has space for a new
-         * component of type componentType ["c1", "c2", "c3"].
-         */
+
         boolean result = false;
         
         switch (componentType) {
@@ -139,38 +168,55 @@ public class Sim {
                 result = true;
             break;
         default:
-            // TODO: Throw something here or make componentType an enum?
+            throw new IllegalArgumentException("componentType must be c1, c2, or c3");
         }
         return result;
     }
     
-    private void notifyInspector(String id) {
-        /*
-         * Unblocks a blocked inspector and adds their inspected Component to
-         * the future event list. Does nothing if the inspector is not blocked.
-         * 
-         * id must be one of the following: ["insp1", "insp2"]
-         */
-        Inspector insp = this.inspectors.get(id);
+    
+    /**
+     * Unblocks a blocked Inspector and adds their inspected component to
+     * the future event list. Does nothing if the inspector is not blocked nor
+     * if they have yet to inspect a component.
+     * 
+     * id must be one of the following: ["insp1", "insp2"]
+     * 
+     * @param inspectorId the ID of the blocked Inspector
+     */
+    private void notifyInspector(String inspectorId) {
+        Inspector insp = this.inspectors.get(inspectorId);
         if (!insp.getComponent().equals("") && insp.isBlocked()) {
-            Event depart = new Event(this.clock, EventType.DEPARTURE, id, insp.getComponent());
+            // Schedule a new departure event based on the blocked Inspector
+            Event depart = new Event(this.clock, EventType.DEPARTURE, inspectorId, insp.getComponent());
             this.futureEventList.add(depart);
             insp.setIsBlocked(false);
+            int inspectorNum = inspectorId.equals("insp1") ? 1 : 2;
+            System.out.printf("Inspector %d has been unblocked\n", inspectorNum);
         }
     }
 
+    
+    /**
+     * Creates an arrival event and adds it to the future event list.
+     * There is no interarrival time since Inspectors have an infinite
+     * supply of components that are readily available.
+     * 
+     * @param inspectorId the ID of the Inspector
+     */
     public void scheduleArrival(String inspectorId) {
-        /*
-         * Creates an arrival event and adds it to the future event list.
-         * There is no interarrival time since Inspectors have an infinite
-         * supply of components that are readily available.
-         */
         double arrivalTime = this.clock;
         String component = this.getComponent(inspectorId);
         Event evt = new Event(arrivalTime, EventType.ARRIVAL, inspectorId, component);
         this.futureEventList.add(evt);
     }
 
+    
+    /**
+     * Processes arrival events given a component and an ID.
+     * 
+     * @param component the component
+     * @param id        the ID of the Inspector, ComponentQueue, or Workstation
+     */
     public void processArrival(String component, String id) {
         Event depart;
         
@@ -180,8 +226,10 @@ public class Sim {
         case "c13":
         case "c2":
         case "c3":
-            // Component arrived at a ComponentQueue
+            // Component arrived at a ComponentQueue, so add it to the queue
             this.queues.get(id).put(component, this.clock);
+            
+            // Attempt to start service if all required components are ready
             Workstation ws = this.queueToWorkstation.get(id);
             depart = ws.service(this.clock);
             
@@ -200,15 +248,18 @@ public class Sim {
         }
     }
 
+    
+    /**
+     * Processes departure events given a component and an ID.
+     * 
+     * @param component the component
+     * @param id        the ID of the Inspector, ComponentQueue, or Workstation
+     */
     public void processDeparture(String component, String id) {
-        /*
-         * Processes departure events.
-         */
-        
-        // Direct component based on the queue it's leaving
+        // Direct component based on the entity it's leaving
         switch(id) {
 
-        // Inspected components can only leave Inspector if there is room
+        // Inspected components can only leave the Inspector if there is room
         case "insp1":
             Inspector insp1 = this.inspectors.get(id);
             if (this.isComponentQueueAvailable("c1")) {
@@ -287,16 +338,18 @@ public class Sim {
         }
     }
 
+    
+    /**
+     * Prints the statistical report of the simulation.
+     * 
+     * The report includes the following:
+     *  - Facility throughput
+     *  - Probability that each workstation is busy
+     *  - Average buffer occupancy of each buffer
+     *  - Probability that each inspector remains blocked
+     */
     public void reportSGeneration() {
-        /*
-         * Prints the statistical report of the simulation.
-         * 
-         * The report includes the following:
-         * - Facility throughput
-         * - Probability that each workstation is busy
-         * - Average buffer occupancy of each buffer
-         * - Probability that each inspector remains blocked
-         */
+        
         double throughput = this.TOTAL_PRODUCTS / this.clock;
         
         // Throughput
@@ -318,6 +371,12 @@ public class Sim {
             entry.getValue().qReportGeneration(this.clock);
     }
 
+    
+    /**
+     * Main program.
+     * 
+     * @param args
+     */
     public static void main(String[] args) {
         
         Sim sim = new Sim();
