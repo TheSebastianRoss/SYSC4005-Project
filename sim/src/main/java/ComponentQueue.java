@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ComponentQueue {
-    private int MAX_QUEUE_LENGTH;
+    public static int MAX_QUEUE_LENGTH;
     private int queueLength;
     private Map<Double, Integer> queueLengthTimes;
     private int numDepartures;
@@ -15,7 +15,7 @@ public class ComponentQueue {
     public ComponentQueue(String id) {
         this.MAX_QUEUE_LENGTH = 2;
         this.queueLength = 0;
-        // Use LinkedHashMap so we can iterate over the map in the same order
+        // Use LinkedHashMap to calculate average occupancy in proper order
         this.queueLengthTimes = new LinkedHashMap<>();
         this.numDepartures = 0;
         this.clock = 0;
