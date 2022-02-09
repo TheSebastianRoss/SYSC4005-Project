@@ -1,38 +1,43 @@
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Random;
-import java.util.Scanner;
-import java.util.Set;
 
 public class Sim {
-    private double MEAN_ARRIVAL_TIME;
     private int TOTAL_PRODUCTS;
     private double clock;
     private int numSystemDepartures;
     private int c1Id;
     private int c2Id;
     private int c3Id;
-    private Map<String, ComponentQueue> queues;
     private Map<String, Inspector> inspectors;
+    private Map<String, ComponentQueue> queues;
+    private Map<String, Workstation> workstations;
+    private Map<String, Workstation> queueToWorkstation;
     private Queue<Event> futureEventList;
     
     public Sim() {
-        this.MEAN_ARRIVAL_TIME = 0;
         this.TOTAL_PRODUCTS = 10;
         this.clock = 0;
         this.numSystemDepartures = 0;
         this.c1Id = 0;
         this.c2Id = 0;
         this.c3Id = 0;
-        this.queues = new HashMap<>();
         this.inspectors = new HashMap<>();
+        this.queues = new HashMap<>();
+        this.workstations = new HashMap<>();
+        this.queueToWorkstation = new HashMap<>();
         this.futureEventList = new PriorityQueue<Event>();
+        
+        // Initialize inspectors
+        String[] inspectorIds = new String[] {"insp1", "insp2"};
+        for (String inspectorId : inspectorIds) {
+            this.inspectors.put(inspectorId, new Inspector(inspectorId));
+        }
         
         // Initialize queues
         String[] queueIds = new String[]{"c11", "c12", "c13", "c2", "c3"};
@@ -40,11 +45,23 @@ public class Sim {
             this.queues.put(queueId, new ComponentQueue(queueId));
         }
         
-        // Initialize inspectors
-        String[] inspectorIds = new String[] {"insp1", "insp2"};
-        for (String inspectorId : inspectorIds) {
-            this.inspectors.put(inspectorId, new Inspector(inspectorId));
-        }
+        // Initialize workstations
+        Workstation w1 = new Workstation("w1", Arrays.asList(this.queues.get("c11")));
+        Workstation w2 = new Workstation("w2", Arrays.asList(this.queues.get("c12"),
+                                                             this.queues.get("c2")));
+        Workstation w3 = new Workstation("w3", Arrays.asList(this.queues.get("c13"),
+                                                             this.queues.get("c3")));
+        
+        this.workstations.put("w1", w1);
+        this.workstations.put("w2", w2);
+        this.workstations.put("w3", w3);
+        
+        // Initialize ComponentQueue to Workstation map
+        this.queueToWorkstation.put("c11", w1);
+        this.queueToWorkstation.put("c12", w2);
+        this.queueToWorkstation.put("c13", w3);
+        this.queueToWorkstation.put("c2", w2);
+        this.queueToWorkstation.put("c3", w3);
     }
     
     private String getComponent(String inspectorId) {
@@ -128,6 +145,21 @@ public class Sim {
         }
         return result;
     }
+    
+    private void notifyInspector(String id) {
+        /*
+         * Unblocks a blocked inspector and adds their inspected Component to
+         * the future event list. Does nothing if the inspector is not blocked.
+         * 
+         * id must be one of the following: ["insp1", "insp2"]
+         */
+        Inspector insp = this.inspectors.get(id);
+        if (!insp.getComponent().equals("") && insp.isBlocked()) {
+            Event depart = new Event(this.clock, EventType.DEPARTURE, id, insp.getComponent());
+            this.futureEventList.add(depart);
+            insp.setIsBlocked(false);
+        }
+    }
 
     public void scheduleArrival(String inspectorId) {
         /*
@@ -137,14 +169,8 @@ public class Sim {
          */
         double arrivalTime = this.clock;
         String component = this.getComponent(inspectorId);
-        
-        // Check if there is an available ComponentQueue for the component
-        boolean isValid = this.isComponentQueueAvailable(component.substring(0, 2));
-        
-        if (isValid) {
-            Event evt = new Event(arrivalTime, EventType.ARRIVAL, inspectorId, component);
-            this.futureEventList.add(evt);
-        }
+        Event evt = new Event(arrivalTime, EventType.ARRIVAL, inspectorId, component);
+        this.futureEventList.add(evt);
     }
 
     public void processArrival(String component, String id) {
@@ -157,9 +183,11 @@ public class Sim {
         case "c2":
         case "c3":
             // Component arrived at a ComponentQueue
-            depart = this.queues.get(id).put(component, this.clock);
+            this.queues.get(id).put(component, this.clock);
+            Workstation ws = this.queueToWorkstation.get(id);
+            depart = ws.service(this.clock);
             
-            // Check if the component needs to start service immediately
+            // Check if the component started service immediately
             if (depart != null)
                 this.futureEventList.add(depart);
             break;
@@ -174,25 +202,77 @@ public class Sim {
         }
     }
 
-    public String processDeparture(String id) {
+    public void processDeparture(String component, String id) {
+        /*
+         * Processes departure events.
+         */
         
-        String component = "";
-        
+        // Direct component based on the queue it's leaving
         switch(id) {
-        case "c11":
-        case "c12":
-        case "c13":
-        case "c2":
-        case "c3":
-            // Component departed from a ComponentQueue
-            break;
+
+        // Inspected components can only leave Inspector if there is room
         case "insp1":
+            Inspector insp1 = this.inspectors.get(id);
+            if (this.isComponentQueueAvailable("c1")) {
+                insp1.setIsBlocked(false);
+                insp1.get(this.clock);
+                
+                // Place C1 component into the shortest available C1 ComponentQueue
+                String shortestAvailableQueue = this.getShortestAvailableC1Queue();
+                this.processArrival(component, shortestAvailableQueue);
+                this.notifyInspector("insp2");
+                this.scheduleArrival("insp1");
+            } else {
+                insp1.setIsBlocked(true);
+                System.out.println("Inspect 1 blocked");
+            }
+            break;
+                
         case "insp2":
-            // Component departed from an Inspector
-            component = this.inspectors.get(id).get(this.clock);
+            Inspector insp2 = this.inspectors.get(id);
+            if (component.contains("c2") && this.isComponentQueueAvailable("c2")) {
+                insp2.setIsBlocked(false);
+                insp2.get(this.clock);
+                
+                // Place component from Inspector 2 into correct ComponentQueue
+                this.processArrival(component, "c2");
+                this.notifyInspector("insp1");
+                this.scheduleArrival("insp2");
+
+            } else if (component.contains("c3") && this.isComponentQueueAvailable("c3")) {
+                insp2.setIsBlocked(false);
+                insp2.get(this.clock);
+                
+                // Place component from Inspector 2 into correct ComponentQueue
+                this.processArrival(component, "c2");
+                this.notifyInspector("insp1");
+                this.scheduleArrival("insp2");
+                
+            } else {
+                insp2.setIsBlocked(true);
+                System.out.println("Inspect 2 blocked");
+            }
+            break;
+            
+        default:
+            // Product has left the system
+            this.numSystemDepartures++;
+            System.out.printf("%d products have been produced\n", this.numSystemDepartures);
+            
+            // Empty workstation to prepare for new product
+            this.workstations.get(id).get(this.clock);
+            
+            // Notify potentially blocked inspectors
+            switch (id) {
+            case "w1":
+                this.notifyInspector("insp1");
+                break;
+            case "w2":
+            case "w3":
+                this.notifyInspector("insp1");
+                this.notifyInspector("insp2");
+            }
         }
-        
-        return component;
     }
 
     public void reportSGeneration() {
@@ -210,12 +290,14 @@ public class Sim {
         // Loop until a certain number of products have been produced
         while (sim.numSystemDepartures < sim.TOTAL_PRODUCTS) {
             
-            System.out.println("FEL: " + sim.futureEventList);
+            System.out.println("\nFEL: " + sim.futureEventList);
             
             // Get next event
             Event evt = sim.futureEventList.poll();
+            String component = evt.getComponent();
+            String queueId = evt.getQueueId();
             
-            System.out.println("Next Event: " + evt.toString());
+            System.out.println("Now Processing: " + evt.toString());
 
             // Update clock
             sim.clock = evt.getClock();
@@ -224,43 +306,13 @@ public class Sim {
             if (evt.getEventType().equals(EventType.ARRIVAL)) {
                 
                 // Process arrival for the given component and queue  
-                sim.processArrival(evt.getComponent(), evt.getQueueId());
-                
-                // Schedule next arrival
-                switch (evt.getQueueId()) {
-                case "c11":
-                case "c12":
-                case "c13":
-                    sim.scheduleArrival("insp1");
-                    break;
-                case "c2":
-                case "c3":
-                    sim.scheduleArrival("insp2");
-                }
+                sim.processArrival(component, queueId);
+
             } else {
-                // Process departure
-                String component = sim.processDeparture(evt.getQueueId());
                 
-                // Direct component based on the queue it's leaving
-                switch (evt.getQueueId()) {
-                case "insp1":
-                    // Place C1 component into the shortest available C1 ComponentQueue
-                    String shortestAvailableQueue = sim.getShortestAvailableC1Queue();
-                    sim.processArrival(component, shortestAvailableQueue);
-                    sim.scheduleArrival("insp1");
-                    break;
-                case "insp2":
-                    // Place components from Inspector 2 into correct ComponentQueue
-                    if (evt.getComponent().contains("c2"))
-                        sim.processArrival(component, "c2");
-                    else
-                        sim.processArrival(component, "c3");
-                    sim.scheduleArrival("insp2");
-                    break;
-                default:
-                    // Product has left the system
-                    sim.numSystemDepartures++;
-                }
+                // Process departure for the given component and queue
+                sim.processDeparture(component, queueId);
+
             }
         }
     }

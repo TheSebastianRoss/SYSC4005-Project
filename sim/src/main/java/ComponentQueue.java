@@ -32,17 +32,21 @@ public class ComponentQueue {
         return this.queueLength;
     }
 
-    public Event put(String component, double clock) {
+    public void put(String component, double clock) {
         // Update clock
         this.clock = clock;
         
         // Start service if workstation is available and has all its required components
         this.queueLength++;
-        return null;
+        this.queue.add(component);
+        System.out.printf("Queue %s now has %d components\n", this.id, this.queueLength);
     }
 
-    public void get(double clock, StringBuilder sb, Event evt) {
-        throw new NotImplementedException();
+    public void get(double clock) {
+        this.clock = clock;
+        this.queueLength--;
+        this.queue.remove(0);
+        System.out.printf("Queue %s started service; now has %d components\n", this.id, this.queueLength);
     }
 
     public void qReportGeneration(double clock) {

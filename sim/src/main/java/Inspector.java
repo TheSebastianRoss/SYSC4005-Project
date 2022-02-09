@@ -6,6 +6,7 @@ import java.util.List;
 public class Inspector {
     private double MEAN_SERVICE_TIME;
     private double SIGMA;
+    private boolean isBlocked;
     private int numInService;
     private List<String> inService;
     private double lastEventTime;
@@ -18,6 +19,7 @@ public class Inspector {
     public Inspector(String id) {
         this.MEAN_SERVICE_TIME = 3.2;
         this.SIGMA = 0.6;
+        this.isBlocked = false;
         this.numInService = 0;
         this.inService = new ArrayList<>();
         this.lastEventTime = 0.0;
@@ -78,6 +80,23 @@ public class Inspector {
         } while (serviceTime < 0);
         
         return serviceTime;
+    }
+    
+    public void setIsBlocked(boolean value) {
+        this.isBlocked = value;
+    }
+    
+    public boolean isBlocked() {
+        return this.isBlocked;
+    }
+
+    public String getComponent() {
+        String component = "";
+        
+        if (this.numInService > 0)
+            component = this.inService.get(0);
+        
+        return component;
     }
 
     public void qReportGeneration(double clock) {
