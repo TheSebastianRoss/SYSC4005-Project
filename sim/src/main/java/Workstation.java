@@ -1,5 +1,3 @@
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,11 +10,12 @@ public class Workstation {
     private double totalBusy;
     private double clock;
     private List<ComponentQueue> componentQueues;
-    private int count;
+    private int numProduced;
+    private int nextProductId;
     private String id;
     
     public Workstation(String id, List<ComponentQueue> componentQueues) {
-        this.MEAN_SERVICE_TIME = 3;
+        this.MEAN_SERVICE_TIME = 5;
         this.SIGMA = 0.4;
         this.numInService = 0;
         this.inService = new ArrayList<>();
@@ -24,7 +23,8 @@ public class Workstation {
         this.totalBusy = 0.0;
         this.clock = 0.0;
         this.componentQueues = componentQueues;
-        this.count = 0;
+        this.numProduced = 0;
+        this.nextProductId = 0;
         this.id = id;
     }
     
@@ -52,17 +52,21 @@ public class Workstation {
         }
     }
     
-    private String getProduct() {
+    private String getProductId() {
         /*
          * Returns an identifier for the product that is about to be produced
          * and then increments the count.
          */
-        String product = String.format("%s-%d", this.id, this.count);
-        this.count++;
+        String product = String.format("%s-%d", this.id, this.nextProductId);
+        this.nextProductId++;
         return product;
     }
 
     public Event service(double clock) {
+        /*
+         * Begins producing a product if all components are available.
+         * If production begins, then one of each component is consumed.
+         */
         Event depart;
         
         // Update clock
@@ -73,11 +77,12 @@ public class Workstation {
         if (this.numInService == 0 && this.canProduce()) {
             this.numInService = 1;
             this.consumeComponents();
-            String product = this.getProduct();
+            String product = this.getProductId();
             this.inService.add(product);
             depart = this.scheduleDeparture(product);
         } else {
-            this.totalBusy += (this.clock - this.lastEventTime);
+            if (this.numInService == 1)
+                this.totalBusy += (this.clock - this.lastEventTime);
             depart = null;
         }
         
@@ -86,9 +91,17 @@ public class Workstation {
     }
     
     public void get(double clock) {
+        /*
+         * Removes the produced product from this Workstation.
+         */
         this.clock = clock; 
         this.numInService--;
         this.inService.remove(0);
+        this.numProduced++;
+        
+        // Update statistics
+        this.totalBusy += (this.clock - this.lastEventTime);
+        this.lastEventTime = this.clock;
     }
 
     public Event scheduleDeparture(String product) {
@@ -109,6 +122,17 @@ public class Workstation {
     }
 
     public void qReportGeneration(double clock) {
-        throw new NotImplementedException();
+        
+        this.clock = clock;
+        
+        // Update total busy if a product is in service
+        if (this.numInService == 1)
+            this.totalBusy += (this.clock - this.lastEventTime);
+        
+        double utilization = this.totalBusy / this.clock;
+        
+        System.out.printf("*** WORKSTATION %s REPORT ***\n", this.id);
+        System.out.printf("Products produced = %d\n", this.numProduced);
+        System.out.printf("Probability of being busy = %.2f\n\n", utilization);
     }
 }

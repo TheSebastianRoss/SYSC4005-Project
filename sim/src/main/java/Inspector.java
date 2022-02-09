@@ -1,5 +1,3 @@
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,11 +11,10 @@ public class Inspector {
     private double totalBusy;
     private double totalBlocked;
     private double clock;
-    private List<ComponentQueue> componentQueues;
     private String id;
     
     public Inspector(String id) {
-        this.MEAN_SERVICE_TIME = 3.2;
+        this.MEAN_SERVICE_TIME = 2;
         this.SIGMA = 0.6;
         this.isBlocked = false;
         this.numInService = 0;
@@ -26,7 +23,6 @@ public class Inspector {
         this.totalBusy = 0.0;
         this.totalBlocked = 0.0;
         this.clock = 0.0;
-        this.componentQueues = new ArrayList<>();
         this.id = id;
     }
 
@@ -52,17 +48,21 @@ public class Inspector {
         return depart;
     }
 
-    public String get(double clock) {
-        // Get the component in service
-        String component = this.inService.remove(0);
+    public void get(double clock) {
         
-        // Update clock and statistics
         this.clock = clock;
-        this.numInService = 0;
-        this.totalBusy += (this.clock - this.lastEventTime);
-        this.lastEventTime = this.clock;
         
-        return component;
+        // If this Inspector is blocked, just update total blocked
+        if (this.isBlocked) {
+            this.totalBlocked += (this.clock - this.lastEventTime);
+        } else {
+            // Remove the component from service
+            this.inService.remove(0);
+            // Update statistics
+            this.numInService = 0;
+            this.totalBusy += (this.clock - this.lastEventTime);
+        }
+        this.lastEventTime = this.clock;
     }
 
     public Event scheduleDeparture(String component) {
@@ -100,6 +100,19 @@ public class Inspector {
     }
 
     public void qReportGeneration(double clock) {
-        throw new NotImplementedException();
+        this.clock = clock;
+        
+        // Update statistics
+        if (this.isBlocked)
+            this.totalBlocked += (this.clock - this.lastEventTime);
+        else
+            this.totalBusy += (this.clock - this.lastEventTime);
+        
+        double pBlocked = this.totalBlocked / this.clock;
+        
+        System.out.printf("*** INSPECTOR %s REPORT ***\n", this.id);
+        System.out.printf("Total time busy = %.1f\n", this.totalBusy);
+        System.out.printf("Total time blocked = %.1f\n", this.totalBlocked);
+        System.out.printf("Probability of being blocked = %.2f\n\n", pBlocked);
     }
 }

@@ -1,5 +1,3 @@
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -126,18 +124,18 @@ public class Sim {
         case "c1":
             String[] c1Queues = new String[] {"c11", "c12", "c13"};
             for (String c1Queue : c1Queues) {
-                if (this.queues.get(c1Queue).getQueueLength() < 2) {
+                if (this.queues.get(c1Queue).hasSpace()) {
                     result = true;
                     break;
                 }  
             }
             break;
         case "c2":
-            if (this.queues.get("c2").getQueueLength() < 2)
+            if (this.queues.get("c2").hasSpace())
                 result = true;
             break;
         case "c3":
-            if (this.queues.get("c3").getQueueLength() < 2)
+            if (this.queues.get("c3").hasSpace())
                 result = true;
             break;
         default:
@@ -214,6 +212,7 @@ public class Sim {
         case "insp1":
             Inspector insp1 = this.inspectors.get(id);
             if (this.isComponentQueueAvailable("c1")) {
+                // There is room, so get component from Inspector
                 insp1.setIsBlocked(false);
                 insp1.get(this.clock);
                 
@@ -222,15 +221,19 @@ public class Sim {
                 this.processArrival(component, shortestAvailableQueue);
                 this.notifyInspector("insp2");
                 this.scheduleArrival("insp1");
+                
             } else {
+                // There is no room, so just update the Inspector's statistics
                 insp1.setIsBlocked(true);
-                System.out.println("Inspect 1 blocked");
+                insp1.get(this.clock);
+                System.out.println("Inspector 1 blocked");
             }
             break;
                 
         case "insp2":
             Inspector insp2 = this.inspectors.get(id);
             if (component.contains("c2") && this.isComponentQueueAvailable("c2")) {
+                // There is room, so get component from Inspector
                 insp2.setIsBlocked(false);
                 insp2.get(this.clock);
                 
@@ -240,17 +243,20 @@ public class Sim {
                 this.scheduleArrival("insp2");
 
             } else if (component.contains("c3") && this.isComponentQueueAvailable("c3")) {
+                // There is room, so get component from Inspector
                 insp2.setIsBlocked(false);
                 insp2.get(this.clock);
                 
                 // Place component from Inspector 2 into correct ComponentQueue
-                this.processArrival(component, "c2");
+                this.processArrival(component, "c3");
                 this.notifyInspector("insp1");
                 this.scheduleArrival("insp2");
                 
             } else {
+                // There is no room, so just update the Inspector's statistics
                 insp2.setIsBlocked(true);
-                System.out.println("Inspect 2 blocked");
+                insp2.get(this.clock);
+                System.out.println("Inspector 2 blocked");
             }
             break;
             
@@ -260,7 +266,13 @@ public class Sim {
             System.out.printf("%d products have been produced\n", this.numSystemDepartures);
             
             // Empty workstation to prepare for new product
-            this.workstations.get(id).get(this.clock);
+            Workstation ws = this.workstations.get(id);
+            ws.get(this.clock);
+            
+            // Schedule a new departure if components are available
+            Event depart = ws.service(this.clock);
+            if (depart != null)
+                this.futureEventList.add(depart);
             
             // Notify potentially blocked inspectors
             switch (id) {
@@ -276,7 +288,34 @@ public class Sim {
     }
 
     public void reportSGeneration() {
-        throw new NotImplementedException();
+        /*
+         * Prints the statistical report of the simulation.
+         * 
+         * The report includes the following:
+         * - Facility throughput
+         * - Probability that each workstation is busy
+         * - Average buffer occupancy of each buffer
+         * - Probability that each inspector remains blocked
+         */
+        double throughput = this.TOTAL_PRODUCTS / this.clock;
+        
+        // Throughput
+        System.out.println("\n\n*** SIMULATION REPORT ***");
+        System.out.printf("Total clock cycles = %.1f\n", this.clock);
+        System.out.printf("Total products produced = %d\n", this.TOTAL_PRODUCTS);
+        System.out.printf("Throughput (products per clock cycle) = %.2f\n\n", throughput);
+        
+        // Probability that each workstation is busy
+        for (Map.Entry<String, Workstation> entry : this.workstations.entrySet())
+            entry.getValue().qReportGeneration(this.clock);
+        
+        // Average buffer occupancy of each buffer
+        for (Map.Entry<String, ComponentQueue> entry : this.queues.entrySet())
+            entry.getValue().qReportGeneration(this.clock);
+        
+        // Probability that each inspector remains blocked
+        for (Map.Entry<String, Inspector> entry : this.inspectors.entrySet())
+            entry.getValue().qReportGeneration(this.clock);
     }
 
     public static void main(String[] args) {
@@ -315,5 +354,8 @@ public class Sim {
 
             }
         }
+        
+        // Print report
+        sim.reportSGeneration();
     }
 }
