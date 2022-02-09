@@ -1,5 +1,3 @@
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -126,18 +124,18 @@ public class Sim {
         case "c1":
             String[] c1Queues = new String[] {"c11", "c12", "c13"};
             for (String c1Queue : c1Queues) {
-                if (this.queues.get(c1Queue).getQueueLength() < 2) {
+                if (this.queues.get(c1Queue).hasSpace()) {
                     result = true;
                     break;
                 }  
             }
             break;
         case "c2":
-            if (this.queues.get("c2").getQueueLength() < 2)
+            if (this.queues.get("c2").hasSpace())
                 result = true;
             break;
         case "c3":
-            if (this.queues.get("c3").getQueueLength() < 2)
+            if (this.queues.get("c3").hasSpace())
                 result = true;
             break;
         default:
@@ -308,15 +306,16 @@ public class Sim {
         System.out.printf("Throughput (products per clock cycle) = %.2f\n\n", throughput);
         
         // Probability that each workstation is busy
-        this.workstations.get("w1").qReportGeneration(this.clock);
-        this.workstations.get("w2").qReportGeneration(this.clock);
-        this.workstations.get("w3").qReportGeneration(this.clock);
+        for (Map.Entry<String, Workstation> entry : this.workstations.entrySet())
+            entry.getValue().qReportGeneration(this.clock);
         
         // Average buffer occupancy of each buffer
+        for (Map.Entry<String, ComponentQueue> entry : this.queues.entrySet())
+            entry.getValue().qReportGeneration(this.clock);
         
         // Probability that each inspector remains blocked
-        this.inspectors.get("insp1").qReportGeneration(this.clock);
-        this.inspectors.get("insp2").qReportGeneration(this.clock);
+        for (Map.Entry<String, Inspector> entry : this.inspectors.entrySet())
+            entry.getValue().qReportGeneration(this.clock);
     }
 
     public static void main(String[] args) {

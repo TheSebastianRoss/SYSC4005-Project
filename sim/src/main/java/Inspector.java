@@ -1,5 +1,3 @@
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +11,6 @@ public class Inspector {
     private double totalBusy;
     private double totalBlocked;
     private double clock;
-    private List<ComponentQueue> componentQueues;
     private String id;
     
     public Inspector(String id) {
@@ -26,7 +23,6 @@ public class Inspector {
         this.totalBusy = 0.0;
         this.totalBlocked = 0.0;
         this.clock = 0.0;
-        this.componentQueues = new ArrayList<>();
         this.id = id;
     }
 
@@ -117,6 +113,6 @@ public class Inspector {
         System.out.printf("*** INSPECTOR %s REPORT ***\n", this.id);
         System.out.printf("Total time busy = %.1f\n", this.totalBusy);
         System.out.printf("Total time blocked = %.1f\n", this.totalBlocked);
-        System.out.printf("Probability of being blocked = %.1f\n\n", pBlocked);
+        System.out.printf("Probability of being blocked = %.2f\n\n", pBlocked);
     }
 }
