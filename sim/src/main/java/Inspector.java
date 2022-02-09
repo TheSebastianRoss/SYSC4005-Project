@@ -17,7 +17,7 @@ public class Inspector {
     private String id;
     
     public Inspector(String id) {
-        this.MEAN_SERVICE_TIME = 3.2;
+        this.MEAN_SERVICE_TIME = 2;
         this.SIGMA = 0.6;
         this.isBlocked = false;
         this.numInService = 0;

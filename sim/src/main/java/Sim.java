@@ -295,6 +295,8 @@ public class Sim {
         
         // Throughput
         System.out.println("\n\n*** SIMULATION REPORT ***");
+        System.out.printf("Total clock cycles = %.1f\n", this.clock);
+        System.out.printf("Total products produced = %d\n", this.TOTAL_PRODUCTS);
         System.out.printf("Throughput (products per clock cycle) = %.2f\n\n", throughput);
         
         // Probability that each workstation is busy
