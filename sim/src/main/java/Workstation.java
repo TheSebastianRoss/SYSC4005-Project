@@ -1,6 +1,9 @@
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Represents a workstation that produces products in the SYSC 4005 project.
+ */
 public class Workstation {
     private double MEAN_SERVICE_TIME;
     private double SIGMA;
@@ -14,6 +17,13 @@ public class Workstation {
     private int nextProductId;
     private String id;
     
+    
+    /**
+     * Constructor.
+     * 
+     * @param id              the ID of the Workstation
+     * @param componentQueues the required ComponentQueues for production
+     */
     public Workstation(String id, List<ComponentQueue> componentQueues) {
         this.MEAN_SERVICE_TIME = 5;
         this.SIGMA = 0.4;
@@ -28,11 +38,14 @@ public class Workstation {
         this.id = id;
     }
     
+    
+    /**
+     * Returns whether each ComponentQueue that this Workstation requires
+     * contains at least one component.
+     * 
+     * @return true if all required components are available and false otherwise
+     */
     private boolean canProduce() {
-        /*
-         * Returns whether each ComponentQueue that this Workstation requires
-         * contains at least one component.
-         */
         boolean canProduce = true;
         for (ComponentQueue queue : this.componentQueues) {
             if (queue.getQueueLength() == 0) {
@@ -43,37 +56,54 @@ public class Workstation {
         return canProduce;
     }
     
+    
+    /**
+     * Consumes one component from each ComponentQueue for the production of
+     * a product.
+     */
     private void consumeComponents() {
-        /*
-         * Consumes one component from each ComponentQueue.
-         */
         for (ComponentQueue queue : this.componentQueues) {
             queue.get(clock);
         }
     }
     
+    
+    /**
+     * Returns an identifier for the product that is about to be produced
+     * and then increments the ID for the next product.
+     * 
+     * @return the product identifier
+     */
     private String getProductId() {
-        /*
-         * Returns an identifier for the product that is about to be produced
-         * and then increments the count.
-         */
         String product = String.format("%s-%d", this.id, this.nextProductId);
         this.nextProductId++;
         return product;
     }
 
+    
+    /**
+     * Returns a departure event in response to the beginning of production.
+     * Returns null if this Workstation cannot begin production (either already
+     * busy or not all required components are available).
+     * 
+     * Begins producing a product if all components are available.
+     * If production begins, then one of each component is consumed.
+     * 
+     * @param clock the simulation time to start production
+     * @return      a departure event if this Workstation can begin production
+     *              and null otherwise
+     */
     public Event service(double clock) {
-        /*
-         * Begins producing a product if all components are available.
-         * If production begins, then one of each component is consumed.
-         */
+
         Event depart;
         
         // Update clock
         this.clock = clock;
         
-        // Start service if each ComponentQueue contains a component and the
-        // Workstation is not busy
+        /*
+         * Start production if each ComponentQueue contains a component and the
+         * Workstation is not busy.
+         */
         if (this.numInService == 0 && this.canProduce()) {
             this.numInService = 1;
             this.consumeComponents();
@@ -90,10 +120,13 @@ public class Workstation {
         return depart;
     }
     
+    
+    /**
+     * Removes the produced product from this Workstation.
+     * 
+     * @param clock the simulation time at which the produced product is removed
+     */
     public void get(double clock) {
-        /*
-         * Removes the produced product from this Workstation.
-         */
         this.clock = clock; 
         this.numInService--;
         this.inService.remove(0);
@@ -104,12 +137,25 @@ public class Workstation {
         this.lastEventTime = this.clock;
     }
 
+    
+    /**
+     * Returns a departure event in response to the beginning of production.
+     * 
+     * @param product the product being produced
+     * @return        a departure event for the product being produced
+     */
     public Event scheduleDeparture(String product) {
         double serviceTime = this.getServiceTime();
         Event depart = new Event(this.clock + serviceTime, EventType.DEPARTURE, this.id, product);
         return depart;
     }
 
+    
+    /**
+     * Returns a random service time.
+     * 
+     * @return a random service time
+     */
     public double getServiceTime() {
         double serviceTime;
         
@@ -121,6 +167,16 @@ public class Workstation {
         return serviceTime;
     }
 
+    
+    /**
+     * Prints the statistical report of this Workstation.
+     * 
+     * The report includes the following:
+     *  - Products produced
+     *  - Probability of being busy
+     *  
+     * @param clock the simulation time at which the report is generated
+     */
     public void qReportGeneration(double clock) {
         
         this.clock = clock;

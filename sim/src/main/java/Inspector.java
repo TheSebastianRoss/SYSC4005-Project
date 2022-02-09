@@ -1,7 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * Represents an inspector that inspects components in the SYSC 4005 project.
  */
@@ -153,7 +152,7 @@ public class Inspector {
      * Returns '' if this Inspector does not hold a
      * component.
      * 
-     * @return the component being inspected or has been inspected
+     * @return the component being inspected or has been inspected and '' otherwise
      */
     public String getComponent() {
         String component = "";
