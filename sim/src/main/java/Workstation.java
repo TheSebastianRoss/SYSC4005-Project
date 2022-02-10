@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Represents a workstation that produces products in the SYSC 4005 project.
@@ -16,15 +17,16 @@ public class Workstation {
     private int numProduced;
     private int nextProductId;
     private String id;
-    
-    
+    private Random randomGenerator;
+
+
     /**
      * Constructor.
-     * 
+     *
      * @param id              the ID of the Workstation
      * @param componentQueues the required ComponentQueues for production
      */
-    public Workstation(String id, List<ComponentQueue> componentQueues) {
+    public Workstation(String id, List<ComponentQueue> componentQueues, Random randomGenerator) {
         this.MEAN_SERVICE_TIME = 5;
         this.SIGMA = 0.4;
         this.numInService = 0;
@@ -36,6 +38,18 @@ public class Workstation {
         this.numProduced = 0;
         this.nextProductId = 0;
         this.id = id;
+        this.randomGenerator = randomGenerator;
+    }
+
+
+    /**
+     * Constructor.
+     *
+     * @param id              the ID of the Workstation
+     * @param componentQueues the required ComponentQueues for production
+     */
+    public Workstation(String id, List<ComponentQueue> componentQueues) {
+        this(id, componentQueues, new Random(42069));
     }
     
     
@@ -158,12 +172,16 @@ public class Workstation {
      */
     public double getServiceTime() {
         double serviceTime;
-        
-        // TODO: Make this use normal distribution
+        double meanTime = this.MEAN_SERVICE_TIME;
+        double stdDevTime = 0.6; // update with new value after gathering data
+        // TODO: Find the correct standard deviation to use here
+
         do {
-            serviceTime = this.MEAN_SERVICE_TIME;
+            serviceTime = (randomGenerator.nextGaussian() * stdDevTime) + meanTime;
+            // ^ Random.nextGaussian() method returns a random number from a normal distribution with a mean of 0 and a
+            // standard deviation of 1
         } while (serviceTime < 0);
-        
+
         return serviceTime;
     }
 

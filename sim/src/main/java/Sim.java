@@ -23,12 +23,13 @@ public class Sim {
     private Map<String, Workstation> workstations;
     private Map<String, Workstation> queueToWorkstation;
     private Queue<Event> futureEventList;
+    private Random randomGenerator;
     
     
     /**
      * Constructor
      */
-    public Sim() {
+    public Sim(long seed) {
         this.TOTAL_PRODUCTS = 10;
         this.clock = 0;
         this.numSystemDepartures = 0;
@@ -43,11 +44,13 @@ public class Sim {
         this.workstations = new HashMap<>();
         this.queueToWorkstation = new HashMap<>();
         this.futureEventList = new PriorityQueue<Event>();
+
+        this.randomGenerator = new Random(seed);
         
         // Initialize inspectors
         String[] inspectorIds = new String[] {"insp1", "insp2"};
         for (String inspectorId : inspectorIds) {
-            this.inspectors.put(inspectorId, new Inspector(inspectorId));
+            this.inspectors.put(inspectorId, new Inspector(inspectorId, this.randomGenerator));
         }
         
         // Initialize queues
@@ -57,11 +60,11 @@ public class Sim {
         }
         
         // Initialize workstations
-        Workstation w1 = new Workstation("w1", Arrays.asList(this.queues.get("c11")));
+        Workstation w1 = new Workstation("w1", Arrays.asList(this.queues.get("c11")), this.randomGenerator);
         Workstation w2 = new Workstation("w2", Arrays.asList(this.queues.get("c12"),
-                                                             this.queues.get("c2")));
+                                                             this.queues.get("c2")), this.randomGenerator);
         Workstation w3 = new Workstation("w3", Arrays.asList(this.queues.get("c13"),
-                                                             this.queues.get("c3")));
+                                                             this.queues.get("c3")), this.randomGenerator);
         
         this.workstations.put("w1", w1);
         this.workstations.put("w2", w2);
@@ -73,6 +76,10 @@ public class Sim {
         this.queueToWorkstation.put("c13", w3);
         this.queueToWorkstation.put("c2", w2);
         this.queueToWorkstation.put("c3", w3);
+    }
+
+    public Sim() {
+        this(42069);
     }
     
     
