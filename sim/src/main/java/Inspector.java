@@ -23,6 +23,7 @@ public class Inspector {
      * Constructor.
      *
      * @param id the ID of the Inspector
+     * @param randomGenerator the generator used for randomizing service times
      */
     public Inspector(String id, Random randomGenerator) {
         this.MEAN_SERVICE_TIME = 2;

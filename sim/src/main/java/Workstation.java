@@ -25,6 +25,7 @@ public class Workstation {
      *
      * @param id              the ID of the Workstation
      * @param componentQueues the required ComponentQueues for production
+     * @param randomGenerator the generator used for randomizing service times
      */
     public Workstation(String id, List<ComponentQueue> componentQueues, Random randomGenerator) {
         this.MEAN_SERVICE_TIME = 5;

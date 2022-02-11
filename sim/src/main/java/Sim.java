@@ -28,6 +28,9 @@ public class Sim {
     
     /**
      * Constructor
+     *
+     * @param seed The seed passed to the random number generator. Running the
+     *             simulation using the same seed should give the same results.
      */
     public Sim(long seed) {
         this.TOTAL_PRODUCTS = 10;
@@ -37,7 +40,7 @@ public class Sim {
         this.c2Id = 0;
         this.c3Id = 0;
         this.inspectors = new HashMap<>();
-        
+
         // Use LinkedHashMap to display report in proper order
         this.queues = new LinkedHashMap<>();
         
@@ -65,7 +68,7 @@ public class Sim {
                                                              this.queues.get("c2")), this.randomGenerator);
         Workstation w3 = new Workstation("w3", Arrays.asList(this.queues.get("c13"),
                                                              this.queues.get("c3")), this.randomGenerator);
-        
+
         this.workstations.put("w1", w1);
         this.workstations.put("w2", w2);
         this.workstations.put("w3", w3);
@@ -78,6 +81,10 @@ public class Sim {
         this.queueToWorkstation.put("c3", w3);
     }
 
+    /**
+     * Overloaded constructor that sets up the simulator with a default seed
+     * for the random number generator in the case that one is not provided
+     */
     public Sim() {
         this(42069);
     }
