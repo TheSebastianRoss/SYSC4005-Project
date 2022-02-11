@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Represents an inspector that inspects components in the SYSC 4005 project.
@@ -15,14 +16,16 @@ public class Inspector {
     private double totalBlocked;
     private double clock;
     private String id;
-    
-    
+    private Random randomGenerator;
+
+
     /**
      * Constructor.
-     * 
+     *
      * @param id the ID of the Inspector
+     * @param randomGenerator the generator used for randomizing service times
      */
-    public Inspector(String id) {
+    public Inspector(String id, Random randomGenerator) {
         this.MEAN_SERVICE_TIME = 2;
         this.SIGMA = 0.6;
         this.isBlocked = false;
@@ -33,6 +36,17 @@ public class Inspector {
         this.totalBlocked = 0.0;
         this.clock = 0.0;
         this.id = id;
+        this.randomGenerator = randomGenerator;
+    }
+
+
+    /**
+     * Constructor.
+     *
+     * @param id the ID of the Inspector
+     */
+    public Inspector(String id) {
+        this(id, new Random(42069));
     }
 
     
@@ -114,10 +128,14 @@ public class Inspector {
      */
     public double getServiceTime() {
         double serviceTime;
-        
-        // TODO: Make this use normal distribution
+        double meanTime = this.MEAN_SERVICE_TIME;
+        double stdDevTime = 0.6; // update with new value after gathering data
+        // TODO: Find the correct standard deviation to use here
+
         do {
-            serviceTime = this.MEAN_SERVICE_TIME;
+            serviceTime = (randomGenerator.nextGaussian() * stdDevTime) + meanTime;
+            // ^ Random.nextGaussian() method returns a random number from a normal distribution with a mean of 0 and a
+            // standard deviation of 1
         } while (serviceTime < 0);
         
         return serviceTime;
