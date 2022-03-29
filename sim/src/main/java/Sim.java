@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Random;
@@ -416,7 +417,7 @@ public class Sim {
      * @param args
      */
     public static void main(String[] args) {
-        int NUM_REPLICATIONS = 3;
+        int NUM_REPLICATIONS = 10;
         int seed = 123456789;
         
         // Initialize data structure to hold all stats throughout replications
@@ -479,10 +480,37 @@ public class Sim {
         
         // Print final report
         System.out.println("*** FINAL REPORT ***");
-        System.out.printf("Number of replications = %d\n", NUM_REPLICATIONS);
+        System.out.printf("Number of replications = %d\n\n", NUM_REPLICATIONS);
 
+        System.out.println("*** ALL STATS ***");
         for (Map.Entry<String, List<Double>> stat : allStats.entrySet()) {
             System.out.printf("%s = %s\n", stat.getKey(), stat.getValue());
+        }
+        
+        System.out.println("\n*** AVERAGES ACROSS REPLICATIONS ***");
+        LinkedHashMap<String, Double> averages = new LinkedHashMap<String, Double>();
+        for (Map.Entry<String, List<Double>> stat : allStats.entrySet()) {
+            // Compute average and save it to averages HashMap
+            OptionalDouble average = stat.getValue()
+                                         .stream()
+                                         .mapToDouble(a -> a)
+                                         .average();
+            averages.put(stat.getKey(), average.getAsDouble());
+            System.out.printf("Average of %s = %.4f\n", stat.getKey(), average.getAsDouble());
+        }
+        
+        System.out.println("\n*** SAMPLE VARIANCES ACROSS REPLICATIONS ***");
+        LinkedHashMap<String, Double> sampleVars = new LinkedHashMap<String, Double>();
+        double sum, sampleVar;
+        for (Map.Entry<String, List<Double>> stat : allStats.entrySet()) {
+            // Compute sample variances and save it to sampleVars HashMap
+            sum = 0.0;
+            for (double sample : stat.getValue()) {
+                sum += Math.pow(sample - averages.get(stat.getKey()), 2);
+            }
+            sampleVar = sum / (NUM_REPLICATIONS - 1);
+            sampleVars.put(stat.getKey(), sampleVar);
+            System.out.printf("Sample variance of %s = %.4f\n", stat.getKey(), sampleVar);
         }
     }
 }
