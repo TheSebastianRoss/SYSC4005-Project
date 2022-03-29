@@ -33,7 +33,7 @@ public class Sim {
      *             simulation using the same seed should give the same results.
      */
     public Sim(long seed) {
-        this.TOTAL_PRODUCTS = 10;
+        this.TOTAL_PRODUCTS = 5000;
         this.clock = 0;
         this.numSystemDepartures = 0;
         this.c1Id = 0;
@@ -51,9 +51,10 @@ public class Sim {
         this.randomGenerator = new Random(seed);
         
         // Initialize inspectors
-        String[] inspectorIds = new String[] {"insp1", "insp2"};
-        for (String inspectorId : inspectorIds) {
-            this.inspectors.put(inspectorId, new Inspector(inspectorId, this.randomGenerator));
+        String[] inspIds = new String[]{"insp1", "insp2"};
+        double serviceLambdas[] = {0.09654, 0.06436, 0.04847};
+        for (String inspId : inspIds) {
+            this.inspectors.put(inspId, new Inspector(inspId, serviceLambdas, this.randomGenerator));
         }
         
         // Initialize queues
@@ -63,11 +64,11 @@ public class Sim {
         }
         
         // Initialize workstations
-        Workstation w1 = new Workstation("w1", Arrays.asList(this.queues.get("c11")), this.randomGenerator);
+        Workstation w1 = new Workstation("w1", Arrays.asList(this.queues.get("c11")), 0.2172, this.randomGenerator);
         Workstation w2 = new Workstation("w2", Arrays.asList(this.queues.get("c12"),
-                                                             this.queues.get("c2")), this.randomGenerator);
+                                                             this.queues.get("c2")), 0.09015, this.randomGenerator);
         Workstation w3 = new Workstation("w3", Arrays.asList(this.queues.get("c13"),
-                                                             this.queues.get("c3")), this.randomGenerator);
+                                                             this.queues.get("c3")), 0.1137, this.randomGenerator);
 
         this.workstations.put("w1", w1);
         this.workstations.put("w2", w2);
