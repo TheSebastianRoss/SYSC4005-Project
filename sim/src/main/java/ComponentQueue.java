@@ -111,7 +111,7 @@ public class ComponentQueue {
         
         return averageOccupancy;
     }
-
+    
     
     /**
      * Prints the statistical report of this ComponentQueue.

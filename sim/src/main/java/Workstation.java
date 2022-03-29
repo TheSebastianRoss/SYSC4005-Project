@@ -201,6 +201,7 @@ public class Workstation {
         
         System.out.printf("*** WORKSTATION %s REPORT ***\n", this.id);
         System.out.printf("Products produced = %d\n", this.numProduced);
+        System.out.printf("Total time busy = %.2f\n", this.totalBusy);
         System.out.printf("Probability of being busy = %.2f\n\n", utilization);
     }
 }

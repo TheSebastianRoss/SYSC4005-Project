@@ -1,6 +1,8 @@
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -385,6 +387,11 @@ public class Sim {
         for (Map.Entry<String, Inspector> entry : this.inspectors.entrySet())
             entry.getValue().qReportGeneration(this.clock);
     }
+    
+    
+    public double getThroughput() {
+        return this.TOTAL_PRODUCTS / this.clock;
+    }
 
     
     /**
@@ -393,43 +400,53 @@ public class Sim {
      * @param args
      */
     public static void main(String[] args) {
+        int NUM_REPLICATIONS = 3;
+        int seed = 123456789;
         
-        Sim sim = new Sim();
-        
-        // Schedule first arrivals
-        sim.scheduleArrival("insp1");
-        sim.scheduleArrival("insp2");
-        
-        // Loop until a certain number of products have been produced
-        while (sim.numSystemDepartures < sim.TOTAL_PRODUCTS) {
+        for (int i=0; i < NUM_REPLICATIONS; i++) {
+            Sim sim = new Sim(seed);
             
-            System.out.println("\nFEL: " + sim.futureEventList);
+            // Schedule first arrivals
+            sim.scheduleArrival("insp1");
+            sim.scheduleArrival("insp2");
             
-            // Get next event
-            Event evt = sim.futureEventList.poll();
-            String component = evt.getComponent();
-            String queueId = evt.getQueueId();
-            
-            System.out.println("Now Processing: " + evt.toString());
-
-            // Update clock
-            sim.clock = evt.getClock();
-            
-            // Check EventType
-            if (evt.getEventType().equals(EventType.ARRIVAL)) {
+            // Loop until a certain number of products have been produced
+            while (sim.numSystemDepartures < sim.TOTAL_PRODUCTS) {
                 
-                // Process arrival for the given component and queue  
-                sim.processArrival(component, queueId);
-
-            } else {
+                System.out.println("\nFEL: " + sim.futureEventList);
                 
-                // Process departure for the given component and queue
-                sim.processDeparture(component, queueId);
+                // Get next event
+                Event evt = sim.futureEventList.poll();
+                String component = evt.getComponent();
+                String queueId = evt.getQueueId();
+                
+                System.out.println("Now Processing: " + evt.toString());
 
+                // Update clock
+                sim.clock = evt.getClock();
+                
+                // Check EventType
+                if (evt.getEventType().equals(EventType.ARRIVAL)) {
+                    
+                    // Process arrival for the given component and queue  
+                    sim.processArrival(component, queueId);
+
+                } else {
+                    
+                    // Process departure for the given component and queue
+                    sim.processDeparture(component, queueId);
+
+                }
             }
+            
+            // Print report
+            sim.reportSGeneration();
+            
+            // Increment seed for next replication
+            seed++;
         }
         
-        // Print report
-        sim.reportSGeneration();
+        System.out.println("*** FINAL REPORT ***");
+        System.out.printf("Number of replications = %d\n", NUM_REPLICATIONS);
     }
 }
