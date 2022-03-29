@@ -6,7 +6,7 @@ import java.util.Random;
  * Represents an inspector that inspects components in the SYSC 4005 project.
  */
 public class Inspector {
-    private double LAMBDA;
+    private double LAMBDAS[];
     private boolean isBlocked;
     private int numInService;
     private List<String> inService;
@@ -24,8 +24,8 @@ public class Inspector {
      * @param id the ID of the Inspector
      * @param randomGenerator the generator used for randomizing service times
      */
-    public Inspector(String id, double lambda, Random randomGenerator) {
-        this.LAMBDA = lambda;
+    public Inspector(String id, double lambdas[], Random randomGenerator) {
+        this.LAMBDAS = lambdas;
         this.isBlocked = false;
         this.numInService = 0;
         this.inService = new ArrayList<>();
@@ -43,8 +43,8 @@ public class Inspector {
      *
      * @param id the ID of the Inspector
      */
-    public Inspector(String id, double lambda) {
-        this(id, lambda, new Random(42069));
+    public Inspector(String id, double lambdas[]) {
+        this(id, lambdas, new Random(42069));
     }
 
     
@@ -113,7 +113,9 @@ public class Inspector {
      * @return          a new departure event based on an inspection
      */
     public Event scheduleDeparture(String component) {
-        double serviceTime = this.getServiceTime();
+        // Service time distribution depends on type of component
+        int componentType = Character.getNumericValue(component.charAt(1));
+        double serviceTime = this.getServiceTime(componentType);
         Event depart = new Event(this.clock + serviceTime, EventType.DEPARTURE, this.id, component);
         return depart;
     }
@@ -124,11 +126,11 @@ public class Inspector {
      * 
      * @return a random service time
      */
-    public double getServiceTime() {
+    public double getServiceTime(int componentType) {
         double serviceTime;
 
         do {
-            serviceTime = Math.log(1-randomGenerator.nextDouble())/-LAMBDA;
+            serviceTime = Math.log(1-randomGenerator.nextDouble())/-LAMBDAS[componentType-1];
         } while (serviceTime < 0);
         
         return serviceTime;

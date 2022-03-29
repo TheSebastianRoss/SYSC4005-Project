@@ -51,10 +51,11 @@ public class Sim {
         this.randomGenerator = new Random(seed);
         
         // Initialize inspectors
-        Inspector insp1 = new Inspector("insp1", 0.09654, this.randomGenerator);
-        Inspector insp2 = new Inspector("insp2", 0.06436, this.randomGenerator);
-        this.inspectors.put("insp1", insp1);
-        this.inspectors.put("insp2", insp2);
+        String[] inspIds = new String[]{"insp1", "insp2"};
+        double serviceLambdas[] = {0.09654, 0.06436, 0.04847};
+        for (String inspId : inspIds) {
+            this.inspectors.put(inspId, new Inspector(inspId, serviceLambdas, this.randomGenerator));
+        }
         
         // Initialize queues
         String[] queueIds = new String[]{"c11", "c12", "c13", "c2", "c3"};
