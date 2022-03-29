@@ -33,7 +33,7 @@ public class Sim {
      *             simulation using the same seed should give the same results.
      */
     public Sim(long seed) {
-        this.TOTAL_PRODUCTS = 10;
+        this.TOTAL_PRODUCTS = 5000;
         this.clock = 0;
         this.numSystemDepartures = 0;
         this.c1Id = 0;
@@ -51,10 +51,10 @@ public class Sim {
         this.randomGenerator = new Random(seed);
         
         // Initialize inspectors
-        String[] inspectorIds = new String[] {"insp1", "insp2"};
-        for (String inspectorId : inspectorIds) {
-            this.inspectors.put(inspectorId, new Inspector(inspectorId, this.randomGenerator));
-        }
+        Inspector insp1 = new Inspector("insp1", 0.09654, this.randomGenerator);
+        Inspector insp2 = new Inspector("insp2", 0.06436, this.randomGenerator);
+        this.inspectors.put("insp1", insp1);
+        this.inspectors.put("insp2", insp2);
         
         // Initialize queues
         String[] queueIds = new String[]{"c11", "c12", "c13", "c2", "c3"};
@@ -63,11 +63,11 @@ public class Sim {
         }
         
         // Initialize workstations
-        Workstation w1 = new Workstation("w1", Arrays.asList(this.queues.get("c11")), this.randomGenerator);
+        Workstation w1 = new Workstation("w1", Arrays.asList(this.queues.get("c11")), 0.2172, this.randomGenerator);
         Workstation w2 = new Workstation("w2", Arrays.asList(this.queues.get("c12"),
-                                                             this.queues.get("c2")), this.randomGenerator);
+                                                             this.queues.get("c2")), 0.09015, this.randomGenerator);
         Workstation w3 = new Workstation("w3", Arrays.asList(this.queues.get("c13"),
-                                                             this.queues.get("c3")), this.randomGenerator);
+                                                             this.queues.get("c3")), 0.1137, this.randomGenerator);
 
         this.workstations.put("w1", w1);
         this.workstations.put("w2", w2);

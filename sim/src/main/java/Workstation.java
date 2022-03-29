@@ -6,8 +6,7 @@ import java.util.Random;
  * Represents a workstation that produces products in the SYSC 4005 project.
  */
 public class Workstation {
-    private double MEAN_SERVICE_TIME;
-    private double SIGMA;
+    private double LAMBDA;
     private int numInService;
     private List<String> inService;
     private double lastEventTime;
@@ -27,9 +26,8 @@ public class Workstation {
      * @param componentQueues the required ComponentQueues for production
      * @param randomGenerator the generator used for randomizing service times
      */
-    public Workstation(String id, List<ComponentQueue> componentQueues, Random randomGenerator) {
-        this.MEAN_SERVICE_TIME = 5;
-        this.SIGMA = 0.4;
+    public Workstation(String id, List<ComponentQueue> componentQueues, double lambda, Random randomGenerator) {
+        this.LAMBDA = lambda;
         this.numInService = 0;
         this.inService = new ArrayList<>();
         this.lastEventTime = 0.0;
@@ -49,8 +47,8 @@ public class Workstation {
      * @param id              the ID of the Workstation
      * @param componentQueues the required ComponentQueues for production
      */
-    public Workstation(String id, List<ComponentQueue> componentQueues) {
-        this(id, componentQueues, new Random(42069));
+    public Workstation(String id, List<ComponentQueue> componentQueues, double lambda) {
+        this(id, componentQueues, lambda, new Random(42069));
     }
     
     
@@ -173,16 +171,11 @@ public class Workstation {
      */
     public double getServiceTime() {
         double serviceTime;
-        double meanTime = this.MEAN_SERVICE_TIME;
-        double stdDevTime = 0.6; // update with new value after gathering data
-        // TODO: Find the correct standard deviation to use here
 
         do {
-            serviceTime = (randomGenerator.nextGaussian() * stdDevTime) + meanTime;
-            // ^ Random.nextGaussian() method returns a random number from a normal distribution with a mean of 0 and a
-            // standard deviation of 1
+            serviceTime = Math.log(1-randomGenerator.nextDouble())/-LAMBDA;
         } while (serviceTime < 0);
-
+        
         return serviceTime;
     }
 
