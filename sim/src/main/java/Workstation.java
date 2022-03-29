@@ -204,4 +204,15 @@ public class Workstation {
         System.out.printf("Total time busy = %.2f\n", this.totalBusy);
         System.out.printf("Probability of being busy = %.2f\n\n", utilization);
     }
+    
+    
+    /**
+     * Returns the probability that this Workstation is busy.
+     * ONLY call this function after calling qReportGeneration().
+     * 
+     * @return the probability of being busy
+     */
+    public double getProbBusy() {
+        return this.totalBusy / this.clock;
+    }
 }

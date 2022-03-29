@@ -203,4 +203,15 @@ public class Inspector {
         System.out.printf("Total time blocked = %.1f\n", this.totalBlocked);
         System.out.printf("Probability of being blocked = %.2f\n\n", pBlocked);
     }
+    
+    
+    /**
+     * Returns the probability that this Inspector is blocked.
+     * ONLY call this function after calling qReportGeneration().
+     * 
+     * @return the probability of being blocked
+     */
+    public double getProbBlocked() {
+        return this.totalBlocked / this.clock;
+    }
 }

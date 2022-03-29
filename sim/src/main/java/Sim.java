@@ -389,8 +389,24 @@ public class Sim {
     }
     
     
-    public double getThroughput() {
-        return this.TOTAL_PRODUCTS / this.clock;
+    public HashMap<String, Double> getStats() {
+        HashMap<String, Double> stats = new HashMap<String, Double>();
+        
+        double throughput = this.TOTAL_PRODUCTS / this.clock;
+        
+        stats.put("throughput", throughput);
+        stats.put("pBusyW1", this.workstations.get("w1").getProbBusy());
+        stats.put("pBusyW2", this.workstations.get("w2").getProbBusy());
+        stats.put("pBusyW3", this.workstations.get("w3").getProbBusy());
+        stats.put("avgOccupancyC11", this.queues.get("c11").getAvgOccupancy());
+        stats.put("avgOccupancyC12", this.queues.get("c12").getAvgOccupancy());
+        stats.put("avgOccupancyC13", this.queues.get("c13").getAvgOccupancy());
+        stats.put("avgOccupancyC2", this.queues.get("c2").getAvgOccupancy());
+        stats.put("avgOccupancyC3", this.queues.get("c3").getAvgOccupancy());
+        stats.put("pBlockedInsp1", this.inspectors.get("insp1").getProbBlocked());
+        stats.put("pBlockedInsp2", this.inspectors.get("insp2").getProbBlocked());
+        
+        return stats;
     }
 
     
@@ -402,6 +418,16 @@ public class Sim {
     public static void main(String[] args) {
         int NUM_REPLICATIONS = 3;
         int seed = 123456789;
+        
+        // Initialize data structure to hold all stats throughout replications
+        LinkedHashMap<String, List<Double>> allStats = new LinkedHashMap<String, List<Double>>();
+        String STATS[] = {"throughput", "pBusyW1", "pBusyW2", "pBusyW3",
+                          "avgOccupancyC11", "avgOccupancyC12", "avgOccupancyC13",
+                          "avgOccupancyC2", "avgOccupancyC3", "pBlockedInsp1",
+                          "pBlockedInsp2"};
+        
+        for (String stat : STATS)
+            allStats.put(stat, new ArrayList<Double>());
         
         for (int i=0; i < NUM_REPLICATIONS; i++) {
             Sim sim = new Sim(seed);
@@ -439,14 +465,24 @@ public class Sim {
                 }
             }
             
-            // Print report
+            // Print replication report
             sim.reportSGeneration();
+            
+            // Save replication stats
+            HashMap<String, Double> replicationStats = sim.getStats();
+            for (String stat : STATS)
+                allStats.get(stat).add(replicationStats.get(stat));
             
             // Increment seed for next replication
             seed++;
         }
         
+        // Print final report
         System.out.println("*** FINAL REPORT ***");
         System.out.printf("Number of replications = %d\n", NUM_REPLICATIONS);
+
+        for (Map.Entry<String, List<Double>> stat : allStats.entrySet()) {
+            System.out.printf("%s = %s\n", stat.getKey(), stat.getValue());
+        }
     }
 }
