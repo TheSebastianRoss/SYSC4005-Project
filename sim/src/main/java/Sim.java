@@ -510,7 +510,7 @@ public class Sim {
             }
             sampleVar = sum / (NUM_REPLICATIONS - 1);
             sampleVars.put(stat.getKey(), sampleVar);
-            System.out.printf("Sample variance of %s = %.4f\n", stat.getKey(), sampleVar);
+            System.out.printf("Sample variance of %s = %.8f\n", stat.getKey(), sampleVar);
         }
     }
 }
