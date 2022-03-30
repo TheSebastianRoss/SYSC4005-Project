@@ -1,27 +1,29 @@
 public class RandomLCMGenerator {
-    private final double seed;
-    private double nextOutput;
-    private double multiplier;
-    private double increment;
-    private double modulusBase;
+    private final long seed;
+    private long lastOutput;
+    private static final long MULTIPLIER = 420666997;
+    private static final long INCREMENT = 1000001;
+    private static final long MODULUS_BASE = 281474976710656L;
 
-    public RandomLCMGenerator(double seed, double multiplier, double increment, double modulusBase) {
+    public RandomLCMGenerator(long seed) {
         this.seed = seed;
-        this.multiplier = multiplier;
-        this.increment = increment;
-        this.modulusBase = modulusBase;
-        this.nextOutput = seed;
+        this.lastOutput = seed;
     }
 
-    public double generate() {
-        double output = this.nextOutput;
+    public double nextDouble() {
+        this.lastOutput = ((MULTIPLIER * this.lastOutput) + INCREMENT)% MODULUS_BASE;
 
-        this.nextOutput = ((this.multiplier * output) + this.increment)%this.modulusBase;
-
-        return output;
+        return this.lastOutput/(double) MODULUS_BASE;
     }
 
-    private double getSeed() {
+    private long getSeed() {
         return this.seed;
+    }
+
+    public static void main(String[] args) {
+        RandomLCMGenerator random = new RandomLCMGenerator(17);
+        for(int i = 0; i < 50; i++) {
+            System.out.println(random.nextDouble());
+        }
     }
 }
