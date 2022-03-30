@@ -111,7 +111,7 @@ public class ComponentQueue {
         
         return averageOccupancy;
     }
-
+    
     
     /**
      * Prints the statistical report of this ComponentQueue.
@@ -134,5 +134,16 @@ public class ComponentQueue {
         System.out.printf("*** QUEUE %s REPORT ***\n", this.id);
         System.out.printf("Number of departures = %d\n", this.numDepartures);
         System.out.printf("Average occupancy = %.2f\n\n", averageOccupancy);
+    }
+    
+    
+    /**
+     * Returns the average occupancy of this component buffer.
+     * ONLY call this function after calling qReportGeneration().
+     * 
+     * @return the average occupancy
+     */
+    public double getAvgOccupancy() {
+        return this.getAverageOccupancy(this.clock);
     }
 }

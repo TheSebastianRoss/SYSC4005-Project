@@ -1,7 +1,10 @@
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Random;
@@ -385,6 +388,27 @@ public class Sim {
         for (Map.Entry<String, Inspector> entry : this.inspectors.entrySet())
             entry.getValue().qReportGeneration(this.clock);
     }
+    
+    
+    public HashMap<String, Double> getStats() {
+        HashMap<String, Double> stats = new HashMap<String, Double>();
+        
+        double throughput = this.TOTAL_PRODUCTS / this.clock;
+        
+        stats.put("throughput", throughput);
+        stats.put("pBusyW1", this.workstations.get("w1").getProbBusy());
+        stats.put("pBusyW2", this.workstations.get("w2").getProbBusy());
+        stats.put("pBusyW3", this.workstations.get("w3").getProbBusy());
+        stats.put("avgOccupancyC11", this.queues.get("c11").getAvgOccupancy());
+        stats.put("avgOccupancyC12", this.queues.get("c12").getAvgOccupancy());
+        stats.put("avgOccupancyC13", this.queues.get("c13").getAvgOccupancy());
+        stats.put("avgOccupancyC2", this.queues.get("c2").getAvgOccupancy());
+        stats.put("avgOccupancyC3", this.queues.get("c3").getAvgOccupancy());
+        stats.put("pBlockedInsp1", this.inspectors.get("insp1").getProbBlocked());
+        stats.put("pBlockedInsp2", this.inspectors.get("insp2").getProbBlocked());
+        
+        return stats;
+    }
 
     
     /**
@@ -393,43 +417,100 @@ public class Sim {
      * @param args
      */
     public static void main(String[] args) {
+        int NUM_REPLICATIONS = 10;
+        int seed = 123456789;
         
-        Sim sim = new Sim();
+        // Initialize data structure to hold all stats throughout replications
+        LinkedHashMap<String, List<Double>> allStats = new LinkedHashMap<String, List<Double>>();
+        String STATS[] = {"throughput", "pBusyW1", "pBusyW2", "pBusyW3",
+                          "avgOccupancyC11", "avgOccupancyC12", "avgOccupancyC13",
+                          "avgOccupancyC2", "avgOccupancyC3", "pBlockedInsp1",
+                          "pBlockedInsp2"};
         
-        // Schedule first arrivals
-        sim.scheduleArrival("insp1");
-        sim.scheduleArrival("insp2");
+        for (String stat : STATS)
+            allStats.put(stat, new ArrayList<Double>());
         
-        // Loop until a certain number of products have been produced
-        while (sim.numSystemDepartures < sim.TOTAL_PRODUCTS) {
+        for (int i=0; i < NUM_REPLICATIONS; i++) {
+            Sim sim = new Sim(seed);
             
-            System.out.println("\nFEL: " + sim.futureEventList);
+            // Schedule first arrivals
+            sim.scheduleArrival("insp1");
+            sim.scheduleArrival("insp2");
             
-            // Get next event
-            Event evt = sim.futureEventList.poll();
-            String component = evt.getComponent();
-            String queueId = evt.getQueueId();
-            
-            System.out.println("Now Processing: " + evt.toString());
-
-            // Update clock
-            sim.clock = evt.getClock();
-            
-            // Check EventType
-            if (evt.getEventType().equals(EventType.ARRIVAL)) {
+            // Loop until a certain number of products have been produced
+            while (sim.numSystemDepartures < sim.TOTAL_PRODUCTS) {
                 
-                // Process arrival for the given component and queue  
-                sim.processArrival(component, queueId);
-
-            } else {
+                System.out.println("\nFEL: " + sim.futureEventList);
                 
-                // Process departure for the given component and queue
-                sim.processDeparture(component, queueId);
+                // Get next event
+                Event evt = sim.futureEventList.poll();
+                String component = evt.getComponent();
+                String queueId = evt.getQueueId();
+                
+                System.out.println("Now Processing: " + evt.toString());
 
+                // Update clock
+                sim.clock = evt.getClock();
+                
+                // Check EventType
+                if (evt.getEventType().equals(EventType.ARRIVAL)) {
+                    
+                    // Process arrival for the given component and queue  
+                    sim.processArrival(component, queueId);
+
+                } else {
+                    
+                    // Process departure for the given component and queue
+                    sim.processDeparture(component, queueId);
+
+                }
             }
+            
+            // Print replication report
+            sim.reportSGeneration();
+            
+            // Save replication stats
+            HashMap<String, Double> replicationStats = sim.getStats();
+            for (String stat : STATS)
+                allStats.get(stat).add(replicationStats.get(stat));
+            
+            // Increment seed for next replication
+            seed++;
         }
         
-        // Print report
-        sim.reportSGeneration();
+        // Print final report
+        System.out.println("*** FINAL REPORT ***");
+        System.out.printf("Number of replications = %d\n\n", NUM_REPLICATIONS);
+
+        System.out.println("*** ALL STATS ***");
+        for (Map.Entry<String, List<Double>> stat : allStats.entrySet()) {
+            System.out.printf("%s = %s\n", stat.getKey(), stat.getValue());
+        }
+        
+        System.out.println("\n*** AVERAGES ACROSS REPLICATIONS ***");
+        LinkedHashMap<String, Double> averages = new LinkedHashMap<String, Double>();
+        for (Map.Entry<String, List<Double>> stat : allStats.entrySet()) {
+            // Compute average and save it to averages HashMap
+            OptionalDouble average = stat.getValue()
+                                         .stream()
+                                         .mapToDouble(a -> a)
+                                         .average();
+            averages.put(stat.getKey(), average.getAsDouble());
+            System.out.printf("Average of %s = %.4f\n", stat.getKey(), average.getAsDouble());
+        }
+        
+        System.out.println("\n*** SAMPLE VARIANCES ACROSS REPLICATIONS ***");
+        LinkedHashMap<String, Double> sampleVars = new LinkedHashMap<String, Double>();
+        double sum, sampleVar;
+        for (Map.Entry<String, List<Double>> stat : allStats.entrySet()) {
+            // Compute sample variances and save it to sampleVars HashMap
+            sum = 0.0;
+            for (double sample : stat.getValue()) {
+                sum += Math.pow(sample - averages.get(stat.getKey()), 2);
+            }
+            sampleVar = sum / (NUM_REPLICATIONS - 1);
+            sampleVars.put(stat.getKey(), sampleVar);
+            System.out.printf("Sample variance of %s = %.4f\n", stat.getKey(), sampleVar);
+        }
     }
 }
