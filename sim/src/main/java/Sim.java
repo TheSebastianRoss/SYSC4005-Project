@@ -1,13 +1,4 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.OptionalDouble;
-import java.util.PriorityQueue;
-import java.util.Queue;
-import java.util.Random;
+import java.util.*;
 
 
 /**
@@ -27,18 +18,18 @@ public class Sim {
     private Map<String, Workstation> workstations;
     private Map<String, Workstation> queueToWorkstation;
     private Queue<Event> futureEventList;
-    private Random randomGenerator;
+    private List<Random> randomGenerators;
     
     
     /**
      * Constructor
      *
-     * @param seed The seed passed to the random number generator. Running the
-     *             simulation using the same seed should give the same results.
+     * @param seeds The list of seeds passed to the random number generators. Running the simulation using the same
+     *              seeds should give the same results.
      */
-    public Sim(long seed) {
-        this.TOTAL_PRODUCTS = 5;
-        this.INITIALIZATION_PRODUCTS = 5;
+    public Sim(long[] seeds) {
+        this.TOTAL_PRODUCTS = 5000;
+        this.INITIALIZATION_PRODUCTS = 2000;
         this.clock = 0;
         this.numSystemDepartures = 0;
         this.c1Id = 0;
@@ -53,16 +44,19 @@ public class Sim {
         this.queueToWorkstation = new HashMap<>();
         this.futureEventList = new PriorityQueue<Event>();
 
-        this.randomGenerator = new Random(seed);
+        this.randomGenerators = new ArrayList<Random>();
+        for(long seed: seeds) {
+            randomGenerators.add(new Random(seed));
+        }
         
         // Initialize inspectors
         String[] inspIds = new String[]{"insp1", "insp2"};
         double[] serviceLambdas = {0.09654, 0.06436, 0.04847};
         Map<Integer,Random> inspector1RandomStreams = new HashMap<Integer, Random>();
         Map<Integer,Random> inspector2RandomStreams = new HashMap<Integer, Random>();
-        inspector1RandomStreams.put(1,this.randomGenerator);
-        inspector2RandomStreams.put(2,this.randomGenerator);
-        inspector2RandomStreams.put(3,this.randomGenerator);
+        inspector1RandomStreams.put(1,this.randomGenerators.remove(0));
+        inspector2RandomStreams.put(2,this.randomGenerators.remove(0));
+        inspector2RandomStreams.put(3,this.randomGenerators.remove(0));
         this.inspectors.put("insp1", new Inspector("insp1", serviceLambdas, inspector1RandomStreams));
         this.inspectors.put("insp2", new Inspector("insp2", serviceLambdas, inspector2RandomStreams));
 
@@ -73,11 +67,11 @@ public class Sim {
         }
         
         // Initialize workstations
-        Workstation w1 = new Workstation("w1", Arrays.asList(this.queues.get("c11")), 0.2172, this.randomGenerator);
+        Workstation w1 = new Workstation("w1", Arrays.asList(this.queues.get("c11")), 0.2172, this.randomGenerators.remove(0));
         Workstation w2 = new Workstation("w2", Arrays.asList(this.queues.get("c12"),
-                                                             this.queues.get("c2")), 0.09015, this.randomGenerator);
+                                                             this.queues.get("c2")), 0.09015, this.randomGenerators.remove(0));
         Workstation w3 = new Workstation("w3", Arrays.asList(this.queues.get("c13"),
-                                                             this.queues.get("c3")), 0.1137, this.randomGenerator);
+                                                             this.queues.get("c3")), 0.1137, this.randomGenerators.remove(0));
 
         this.workstations.put("w1", w1);
         this.workstations.put("w2", w2);
@@ -96,7 +90,7 @@ public class Sim {
      * for the random number generator in the case that one is not provided
      */
     public Sim() {
-        this(42069);
+        this(new long[] {420, 69, 1337, 13, 14, 46});
     }
     
     
@@ -442,8 +436,8 @@ public class Sim {
      * @param args
      */
     public static void main(String[] args) {
-        int NUM_REPLICATIONS = 2;
-        int seed = 123456789;
+        int NUM_REPLICATIONS = 10;
+        long[] seeds = {123,456,789,1011,1213,1415};
         
         // Initialize data structure to hold all stats throughout replications
         LinkedHashMap<String, List<Double>> allStats = new LinkedHashMap<String, List<Double>>();
@@ -456,7 +450,7 @@ public class Sim {
             allStats.put(stat, new ArrayList<Double>());
         
         for (int i=0; i < NUM_REPLICATIONS; i++) {
-            Sim sim = new Sim(seed);
+            Sim sim = new Sim(seeds);
             double relativeStart = sim.clock;
             
             // Schedule first arrivals
@@ -533,7 +527,9 @@ public class Sim {
                 allStats.get(stat).add(replicationStats.get(stat));
             
             // Increment seed for next replication
-            seed++;
+            for(int j = 0; j < seeds.length; j++) {
+                seeds[j]++;
+            }
         }
         
         // Print final report
