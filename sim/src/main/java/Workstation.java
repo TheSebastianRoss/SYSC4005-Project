@@ -17,6 +17,7 @@ public class Workstation {
     private int nextProductId;
     private String id;
     private Random randomGenerator;
+    private boolean initializationPhase;
 
 
     /**
@@ -38,6 +39,7 @@ public class Workstation {
         this.nextProductId = 0;
         this.id = id;
         this.randomGenerator = randomGenerator;
+        this.initializationPhase = true;
     }
 
 
@@ -124,8 +126,9 @@ public class Workstation {
             this.inService.add(product);
             depart = this.scheduleDeparture(product);
         } else {
-            if (this.numInService == 1)
+            if (this.numInService == 1) {
                 this.totalBusy += (this.clock - this.lastEventTime);
+            }
             depart = null;
         }
         
@@ -194,8 +197,9 @@ public class Workstation {
         this.clock = clock;
         
         // Update total busy if a product is in service
-        if (this.numInService == 1)
+        if (this.numInService == 1) {
             this.totalBusy += (this.clock - this.lastEventTime);
+        }
         
         double utilization = this.totalBusy / this.clock;
         
@@ -212,7 +216,11 @@ public class Workstation {
      * 
      * @return the probability of being busy
      */
-    public double getProbBusy() {
-        return this.totalBusy / this.clock;
+    public double getProbBusy(double relativeStart) {
+        return this.totalBusy / (this.clock - relativeStart);
+    }
+
+    public void clearStats() {
+        this.totalBusy = 0.0;
     }
 }

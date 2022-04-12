@@ -1,6 +1,4 @@
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Represents an inspector that inspects components in the SYSC 4005 project.
@@ -15,16 +13,17 @@ public class Inspector {
     private double totalBlocked;
     private double clock;
     private String id;
-    private Random randomGenerator;
+    private Map<Integer, Random> randomStreams;
 
 
     /**
      * Constructor.
      *
      * @param id the ID of the Inspector
-     * @param randomGenerator the generator used for randomizing service times
+     * @param randomStreams Map of random stream number to random generator; each stream is used for randomizing service
+     *                          times for a particular kind of component
      */
-    public Inspector(String id, double lambdas[], Random randomGenerator) {
+    public Inspector(String id, double lambdas[], Map<Integer,Random> randomStreams) {
         this.LAMBDAS = lambdas;
         this.isBlocked = false;
         this.numInService = 0;
@@ -34,7 +33,22 @@ public class Inspector {
         this.totalBlocked = 0.0;
         this.clock = 0.0;
         this.id = id;
-        this.randomGenerator = randomGenerator;
+        this.randomStreams = new HashMap<Integer, Random>();
+        for(Integer stream: randomStreams.keySet()) {
+            this.randomStreams.put(stream, randomStreams.get(stream));
+        }
+    }
+
+
+    /**
+     * Constructor.
+     *
+     * @param id the ID of the Inspector
+     * @param randomGenerator the generator used for randomizing service times
+     */
+    public Inspector(String id, double lambdas[], Random randomGenerator) {
+        this(id, lambdas, new HashMap<Integer, Random>());
+        this.randomStreams.put(1, randomGenerator);
     }
 
 
@@ -130,7 +144,7 @@ public class Inspector {
         double serviceTime;
 
         do {
-            serviceTime = Math.log(1-randomGenerator.nextDouble())/-LAMBDAS[componentType-1];
+            serviceTime = Math.log(1-randomStreams.get(componentType).nextDouble())/-LAMBDAS[componentType-1];
         } while (serviceTime < 0);
         
         return serviceTime;
@@ -211,7 +225,12 @@ public class Inspector {
      * 
      * @return the probability of being blocked
      */
-    public double getProbBlocked() {
-        return this.totalBlocked / this.clock;
+    public double getProbBlocked(double relativeStartTime) {
+        return this.totalBlocked / (this.clock - relativeStartTime);
+    }
+
+    public void clearStats() {
+        this.totalBlocked = 0.0;
+        this.totalBusy = 0.0;
     }
 }

@@ -16,6 +16,7 @@ import java.util.Random;
  */
 public class Sim {
     private int TOTAL_PRODUCTS;
+    private int INITIALIZATION_PRODUCTS;
     private double clock;
     private int numSystemDepartures;
     private int c1Id;
@@ -36,7 +37,8 @@ public class Sim {
      *             simulation using the same seed should give the same results.
      */
     public Sim(long seed) {
-        this.TOTAL_PRODUCTS = 5000;
+        this.TOTAL_PRODUCTS = 5;
+        this.INITIALIZATION_PRODUCTS = 5;
         this.clock = 0;
         this.numSystemDepartures = 0;
         this.c1Id = 0;
@@ -55,11 +57,15 @@ public class Sim {
         
         // Initialize inspectors
         String[] inspIds = new String[]{"insp1", "insp2"};
-        double serviceLambdas[] = {0.09654, 0.06436, 0.04847};
-        for (String inspId : inspIds) {
-            this.inspectors.put(inspId, new Inspector(inspId, serviceLambdas, this.randomGenerator));
-        }
-        
+        double[] serviceLambdas = {0.09654, 0.06436, 0.04847};
+        Map<Integer,Random> inspector1RandomStreams = new HashMap<Integer, Random>();
+        Map<Integer,Random> inspector2RandomStreams = new HashMap<Integer, Random>();
+        inspector1RandomStreams.put(1,this.randomGenerator);
+        inspector2RandomStreams.put(2,this.randomGenerator);
+        inspector2RandomStreams.put(3,this.randomGenerator);
+        this.inspectors.put("insp1", new Inspector("insp1", serviceLambdas, inspector1RandomStreams));
+        this.inspectors.put("insp2", new Inspector("insp2", serviceLambdas, inspector2RandomStreams));
+
         // Initialize queues
         String[] queueIds = new String[]{"c11", "c12", "c13", "c2", "c3"};
         for (String queueId : queueIds) {
@@ -366,48 +372,67 @@ public class Sim {
      *  - Average buffer occupancy of each buffer
      *  - Probability that each inspector remains blocked
      */
-    public void reportSGeneration() {
+    public void reportSGeneration(double relativeStart) {
         
-        double throughput = this.TOTAL_PRODUCTS / this.clock;
+        double throughput = this.TOTAL_PRODUCTS / (this.clock - relativeStart);
         
         // Throughput
         System.out.println("\n\n*** SIMULATION REPORT ***");
         System.out.printf("Total clock cycles = %.1f\n", this.clock);
+        System.out.printf("Initialization phase clock cycles = %.1f\n", relativeStart);
+        System.out.printf("Data collection phase clock cycles = %.1f\n", (this.clock - relativeStart));
         System.out.printf("Total products produced = %d\n", this.TOTAL_PRODUCTS);
         System.out.printf("Throughput (products per clock cycle) = %.2f\n\n", throughput);
         
         // Probability that each workstation is busy
         for (Map.Entry<String, Workstation> entry : this.workstations.entrySet())
-            entry.getValue().qReportGeneration(this.clock);
+            entry.getValue().qReportGeneration(this.clock - relativeStart);
         
         // Average buffer occupancy of each buffer
         for (Map.Entry<String, ComponentQueue> entry : this.queues.entrySet())
-            entry.getValue().qReportGeneration(this.clock);
+            entry.getValue().qReportGeneration(this.clock, relativeStart);
         
         // Probability that each inspector remains blocked
         for (Map.Entry<String, Inspector> entry : this.inspectors.entrySet())
-            entry.getValue().qReportGeneration(this.clock);
+            entry.getValue().qReportGeneration(this.clock - relativeStart);
     }
     
     
-    public HashMap<String, Double> getStats() {
+    public HashMap<String, Double> getStats(double relativeStartTime) {
         HashMap<String, Double> stats = new HashMap<String, Double>();
         
-        double throughput = this.TOTAL_PRODUCTS / this.clock;
+        double throughput = this.TOTAL_PRODUCTS / (this.clock - relativeStartTime);
         
         stats.put("throughput", throughput);
-        stats.put("pBusyW1", this.workstations.get("w1").getProbBusy());
-        stats.put("pBusyW2", this.workstations.get("w2").getProbBusy());
-        stats.put("pBusyW3", this.workstations.get("w3").getProbBusy());
-        stats.put("avgOccupancyC11", this.queues.get("c11").getAvgOccupancy());
-        stats.put("avgOccupancyC12", this.queues.get("c12").getAvgOccupancy());
-        stats.put("avgOccupancyC13", this.queues.get("c13").getAvgOccupancy());
-        stats.put("avgOccupancyC2", this.queues.get("c2").getAvgOccupancy());
-        stats.put("avgOccupancyC3", this.queues.get("c3").getAvgOccupancy());
-        stats.put("pBlockedInsp1", this.inspectors.get("insp1").getProbBlocked());
-        stats.put("pBlockedInsp2", this.inspectors.get("insp2").getProbBlocked());
+        stats.put("pBusyW1", this.workstations.get("w1").getProbBusy(relativeStartTime));
+        stats.put("pBusyW2", this.workstations.get("w2").getProbBusy(relativeStartTime));
+        stats.put("pBusyW3", this.workstations.get("w3").getProbBusy(relativeStartTime));
+        stats.put("avgOccupancyC11", this.queues.get("c11").getAvgOccupancy(relativeStartTime));
+        stats.put("avgOccupancyC12", this.queues.get("c12").getAvgOccupancy(relativeStartTime));
+        stats.put("avgOccupancyC13", this.queues.get("c13").getAvgOccupancy(relativeStartTime));
+        stats.put("avgOccupancyC2", this.queues.get("c2").getAvgOccupancy(relativeStartTime));
+        stats.put("avgOccupancyC3", this.queues.get("c3").getAvgOccupancy(relativeStartTime));
+        stats.put("pBlockedInsp1", this.inspectors.get("insp1").getProbBlocked(relativeStartTime));
+        stats.put("pBlockedInsp2", this.inspectors.get("insp2").getProbBlocked(relativeStartTime));
         
         return stats;
+    }
+
+    /**
+     * Clears the stats remembered by the different parts of the system. Mainly used to start with fresh stats after the
+     * sim's initialization phase is over
+     */
+    public void clearStats() {
+        this.workstations.get("w1").clearStats();
+        this.workstations.get("w2").clearStats();
+        this.workstations.get("w3").clearStats();
+        this.queues.get("c11").clearStats();
+        this.queues.get("c12").clearStats();
+        this.queues.get("c13").clearStats();
+        this.queues.get("c2").clearStats();
+        this.queues.get("c3").clearStats();
+        this.inspectors.get("insp1").clearStats();
+        this.inspectors.get("insp2").clearStats();
     }
 
     
@@ -417,12 +442,12 @@ public class Sim {
      * @param args
      */
     public static void main(String[] args) {
-        int NUM_REPLICATIONS = 10;
+        int NUM_REPLICATIONS = 2;
         int seed = 123456789;
         
         // Initialize data structure to hold all stats throughout replications
         LinkedHashMap<String, List<Double>> allStats = new LinkedHashMap<String, List<Double>>();
-        String STATS[] = {"throughput", "pBusyW1", "pBusyW2", "pBusyW3",
+        String[] STATS = {"throughput", "pBusyW1", "pBusyW2", "pBusyW3",
                           "avgOccupancyC11", "avgOccupancyC12", "avgOccupancyC13",
                           "avgOccupancyC2", "avgOccupancyC3", "pBlockedInsp1",
                           "pBlockedInsp2"};
@@ -432,34 +457,67 @@ public class Sim {
         
         for (int i=0; i < NUM_REPLICATIONS; i++) {
             Sim sim = new Sim(seed);
+            double relativeStart = sim.clock;
             
             // Schedule first arrivals
             sim.scheduleArrival("insp1");
             sim.scheduleArrival("insp2");
-            
-            // Loop until a certain number of products have been produced
-            while (sim.numSystemDepartures < sim.TOTAL_PRODUCTS) {
-                
+
+            // Loop until a certain number of products have been produced as part of the initialization
+            while (sim.numSystemDepartures < sim.INITIALIZATION_PRODUCTS) {
+
                 System.out.println("\nFEL: " + sim.futureEventList);
-                
+
                 // Get next event
                 Event evt = sim.futureEventList.poll();
                 String component = evt.getComponent();
                 String queueId = evt.getQueueId();
-                
+
                 System.out.println("Now Processing: " + evt.toString());
 
                 // Update clock
                 sim.clock = evt.getClock();
-                
+
                 // Check EventType
                 if (evt.getEventType().equals(EventType.ARRIVAL)) {
-                    
-                    // Process arrival for the given component and queue  
+
+                    // Process arrival for the given component and queue
                     sim.processArrival(component, queueId);
 
                 } else {
-                    
+
+                    // Process departure for the given component and queue
+                    sim.processDeparture(component, queueId);
+
+                }
+            }
+
+            sim.clearStats();
+            relativeStart = sim.clock;
+
+            // Loop until a certain number of products have been produced after initialization
+            while (sim.numSystemDepartures < sim.INITIALIZATION_PRODUCTS + sim.TOTAL_PRODUCTS) {
+
+                System.out.println("\nFEL: " + sim.futureEventList);
+
+                // Get next event
+                Event evt = sim.futureEventList.poll();
+                String component = evt.getComponent();
+                String queueId = evt.getQueueId();
+
+                System.out.println("Now Processing: " + evt.toString());
+
+                // Update clock
+                sim.clock = evt.getClock();
+
+                // Check EventType
+                if (evt.getEventType().equals(EventType.ARRIVAL)) {
+
+                    // Process arrival for the given component and queue
+                    sim.processArrival(component, queueId);
+
+                } else {
+
                     // Process departure for the given component and queue
                     sim.processDeparture(component, queueId);
 
@@ -467,10 +525,10 @@ public class Sim {
             }
             
             // Print replication report
-            sim.reportSGeneration();
+            sim.reportSGeneration(relativeStart);
             
             // Save replication stats
-            HashMap<String, Double> replicationStats = sim.getStats();
+            HashMap<String, Double> replicationStats = sim.getStats(relativeStart);
             for (String stat : STATS)
                 allStats.get(stat).add(replicationStats.get(stat));
             
