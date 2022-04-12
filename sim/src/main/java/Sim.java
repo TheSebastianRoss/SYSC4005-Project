@@ -192,18 +192,34 @@ public class Sim {
             return this.getShortestAvailableC1QueueTie123();
         }
     }
+    
+    private String getShortestAvailableC1QueueTie321() {
+        String[] c1Queues = new String[] {"c13", "c12", "c11"};
+        String shortestAvailableQueue = "";
+        int shortestQueueLength = ComponentQueue.MAX_QUEUE_LENGTH;
+
+        for (String queueId : c1Queues) {
+            if (this.queues.get(queueId).getQueueLength() < shortestQueueLength) {
+                shortestAvailableQueue = queueId;
+                shortestQueueLength = this.queues.get(queueId).getQueueLength();
+            }
+        }
+        return shortestAvailableQueue;
+    }
 
     /**
      *
      * @return the C1 queue prioritized by the current operating policy
      */
     private String getTargetAvailaleC1Queue() {
-        String operatingPolicy = "checkBlocked";
+        String operatingPolicy = "tie321";
         switch(operatingPolicy) {
             case "checkBlocked":
                 return this.getBlockingC1QueueTieDefault();
             case "tieRandom":
                 return this.getShortestAvailableC1QueueTieRandom();
+            case "tie321":
+                return this.getShortestAvailableC1QueueTie321();
             default:
                 return this.getShortestAvailableC1QueueTie123();
         }
