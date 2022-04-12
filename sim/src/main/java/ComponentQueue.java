@@ -96,7 +96,7 @@ public class ComponentQueue {
      * @param clock the simulation time at which the average occupancy is calculated
      * @return      the average occupancy
      */
-    private double getAverageOccupancy(double clock, double relativeStart) {
+    private double getAverageOccupancy(double clock) {
         
         // Update clock
         this.clock = clock;
@@ -105,7 +105,7 @@ public class ComponentQueue {
         double averageOccupancy = 0.0;
         
         for (Map.Entry<Double, Integer> entry : this.queueLengthTimes.entrySet()) {
-            averageOccupancy += (entry.getValue() * (entry.getKey() - prevTime)) / (this.clock - relativeStart);
+            averageOccupancy += (entry.getValue() * (entry.getKey() - prevTime)) / (this.clock);
             prevTime = entry.getKey();
         }
         
@@ -122,14 +122,14 @@ public class ComponentQueue {
      *  
      * @param clock the simulation time at which the report is generated
      */
-    public void qReportGeneration(double clock, double relativeStart) {
+    public void qReportGeneration(double clock) {
         
         // Update clock
         this.clock = clock;
         
         // Update statistics
         this.queueLengthTimes.put(this.clock, this.queueLength);
-        double averageOccupancy = this.getAverageOccupancy(this.clock, relativeStart);
+        double averageOccupancy = this.getAverageOccupancy(this.clock);
         
         System.out.printf("*** QUEUE %s REPORT ***\n", this.id);
         System.out.printf("Number of departures = %d\n", this.numDepartures);
@@ -143,11 +143,7 @@ public class ComponentQueue {
      * 
      * @return the average occupancy
      */
-    public double getAvgOccupancy(double relativeStart) {
-        return this.getAverageOccupancy(this.clock, relativeStart);
-    }
-
-    public void clearStats() {
-        queueLengthTimes.clear();
+    public double getAvgOccupancy() {
+        return this.getAverageOccupancy(this.clock);
     }
 }

@@ -225,12 +225,7 @@ public class Inspector {
      * 
      * @return the probability of being blocked
      */
-    public double getProbBlocked(double relativeStartTime) {
-        return this.totalBlocked / (this.clock - relativeStartTime);
-    }
-
-    public void clearStats() {
-        this.totalBlocked = 0.0;
-        this.totalBusy = 0.0;
+    public double getProbBlocked() {
+        return this.totalBlocked / this.clock;
     }
 }

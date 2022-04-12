@@ -17,7 +17,6 @@ public class Workstation {
     private int nextProductId;
     private String id;
     private Random randomGenerator;
-    private boolean initializationPhase;
 
 
     /**
@@ -39,7 +38,6 @@ public class Workstation {
         this.nextProductId = 0;
         this.id = id;
         this.randomGenerator = randomGenerator;
-        this.initializationPhase = true;
     }
 
 
@@ -216,11 +214,7 @@ public class Workstation {
      * 
      * @return the probability of being busy
      */
-    public double getProbBusy(double relativeStart) {
-        return this.totalBusy / (this.clock - relativeStart);
-    }
-
-    public void clearStats() {
-        this.totalBusy = 0.0;
+    public double getProbBusy() {
+        return this.totalBusy / this.clock;
     }
 }
