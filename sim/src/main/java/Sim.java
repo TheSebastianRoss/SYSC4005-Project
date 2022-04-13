@@ -21,6 +21,7 @@ public class Sim {
     private Queue<Event> futureEventList;
     private List<Random> randomGenerators;
     private Random operatingPolicyRNG;
+    private Random inspector2GetComponentRNG;
     
     
     /**
@@ -87,6 +88,7 @@ public class Sim {
         this.queueToWorkstation.put("c3", w3);
 
         this.operatingPolicyRNG = this.randomGenerators.remove(0);
+        this.inspector2GetComponentRNG = this.randomGenerators.remove(0);
     }
 
     /**
@@ -119,8 +121,7 @@ public class Sim {
             this.c1Id++;
         } else {
             // Inspector 2 may inspect either C2 or C3 components
-            Random r = new Random();
-            int componentNum = r.nextInt(2) + 2;
+            int componentNum = this.inspector2GetComponentRNG.nextInt(2) + 2;
             
             if (componentNum == 2) {
                 component = String.format(component, componentNum, this.c2Id);
