@@ -156,7 +156,39 @@ public class Sim {
         }
         return shortestAvailableQueue;
     }
+    
+    
+    /**
+     * Returns the shortest available C1 queue with c13 being the highest
+     * priority and c11 being the lowest priority in the case of a tie.
+     * 
+     * Returns a blank String '' if none of the C1 queues have space.
+     * 
+     * @return the shortest available ComponentQueue, or '' if none available
+     */
+    private String getShortestAvailableC1QueueTie321() {
+        String[] c1Queues = new String[] {"c13", "c12", "c11"};
+        String shortestAvailableQueue = "";
+        int shortestQueueLength = ComponentQueue.MAX_QUEUE_LENGTH;
 
+        for (String queueId : c1Queues) {
+            if (this.queues.get(queueId).getQueueLength() < shortestQueueLength) {
+                shortestAvailableQueue = queueId;
+                shortestQueueLength = this.queues.get(queueId).getQueueLength();
+            }
+        }
+        return shortestAvailableQueue;
+    }
+    
+
+    /**
+     * Returns the shortest available C1 queue. In the case of a tie, a randomly
+     * selected shortest component queue is returned.
+     * 
+     * Returns a blank String '' if none of the C1 queues have space.
+     * 
+     * @return the shortest available ComponentQueue, or '' if none available
+     */
     private String getShortestAvailableC1QueueTieRandom() {
         String[] c1Queues = new String[] {"c11", "c12", "c13"};
         List<String> shortestQueues = new ArrayList<String>();
@@ -178,6 +210,16 @@ public class Sim {
         return targetQueue;
     }
 
+    
+    /**
+     * Returns the C1 component queue that is blocking Inspector 2 (either c12
+     * or c13). If Inspector 2 is not blocked, then return the component queue
+     * using the getShortestAvailableC1QueueTie123 operating policy.
+     * 
+     * Returns a blank String '' if none of the C1 queues have space.
+     * 
+     * @return the blocking C1 ComponentQueue, or '' if none available
+     */
     private String getBlockingC1QueueTieDefault() {
         String[] c1Queues = new String[] {"c11", "c12", "c13"};
         Inspector otherInspector = this.inspectors.get("insp2");
@@ -193,23 +235,11 @@ public class Sim {
         }
     }
     
-    private String getShortestAvailableC1QueueTie321() {
-        String[] c1Queues = new String[] {"c13", "c12", "c11"};
-        String shortestAvailableQueue = "";
-        int shortestQueueLength = ComponentQueue.MAX_QUEUE_LENGTH;
-
-        for (String queueId : c1Queues) {
-            if (this.queues.get(queueId).getQueueLength() < shortestQueueLength) {
-                shortestAvailableQueue = queueId;
-                shortestQueueLength = this.queues.get(queueId).getQueueLength();
-            }
-        }
-        return shortestAvailableQueue;
-    }
-
+    
     /**
-     *
-     * @return the C1 queue prioritized by the current operating policy
+     * Returns the target C1 component queue based on a chosen operating policy.
+     * 
+     * @return the target C1 component queue
      */
     private String getTargetAvailaleC1Queue() {
         String operatingPolicy = "tie321";
@@ -489,7 +519,7 @@ public class Sim {
      * @param args
      */
     public static void main(String[] args) {
-        int NUM_REPLICATIONS = 10;
+        int NUM_REPLICATIONS = 11;
         long[] seeds = {123,456,789,1011,1213,1415, 1617, 1819};
         
         // Initialize data structure to hold all stats throughout replications
